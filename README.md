@@ -1,5 +1,9 @@
 # Harness Runtime API
 
+<p align="center">
+  <strong>English</strong> | <a href="README.zh-CN.md">简体中文</a>
+</p>
+
 Harness Runtime API is a provider-neutral contract for starting, observing, controlling, and
 recovering AI agent harness executions. Applications integrate with one stable lifecycle while
 runtime providers adapt frameworks such as DeepSeek Harness or an application-specific agent loop.
