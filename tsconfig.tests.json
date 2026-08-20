@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "composite": false,
+    "noEmit": true,
+    "rootDir": ".",
+    "paths": {
+      "@harness-runtime/core": ["./packages/core/src/index.ts"],
+      "@harness-runtime/protocol": ["./packages/protocol/src/index.ts"]
+    }
+  },
+  "include": ["tests/**/*.ts", "vitest.config.ts"]
+}

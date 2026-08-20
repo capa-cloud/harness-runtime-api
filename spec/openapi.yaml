@@ -1,0 +1,423 @@
+openapi: 3.1.0
+info:
+  title: Harness Runtime API
+  version: 0.1.0
+  description: Provider-neutral control and event protocol for AI agent harness runtimes.
+servers:
+  - url: http://127.0.0.1:4310
+paths:
+  /healthz:
+    get:
+      operationId: health
+      responses:
+        "200":
+          description: Service is ready.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status:
+                    const: ok
+  /v1/runtime:
+    get:
+      operationId: describeRuntime
+      responses:
+        "200":
+          description: Runtime identity and installed providers.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuntimeDescription"
+  /v1/runtime/capabilities:
+    get:
+      operationId: listCapabilities
+      responses:
+        "200":
+          description: Provider capability manifests.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [providers]
+                properties:
+                  providers:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ProviderManifest"
+  /v1/conversations:
+    post:
+      operationId: createConversation
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                metadata:
+                  $ref: "#/components/schemas/JsonObject"
+      responses:
+        "201":
+          description: Conversation created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Conversation"
+        "400":
+          $ref: "#/components/responses/Problem"
+  /v1/conversations/{id}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    get:
+      operationId: getConversation
+      responses:
+        "200":
+          description: Conversation found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Conversation"
+        "404":
+          $ref: "#/components/responses/Problem"
+  /v1/executions:
+    post:
+      operationId: startExecution
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StartExecutionRequest"
+      responses:
+        "202":
+          description: Execution accepted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Execution"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /v1/executions/{id}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    get:
+      operationId: getExecution
+      responses:
+        "200":
+          description: Execution found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Execution"
+        "404":
+          $ref: "#/components/responses/Problem"
+  /v1/executions/{id}:cancel:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    post:
+      operationId: cancelExecution
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+      responses:
+        "200":
+          description: Current execution state after cancellation.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Execution"
+        "404":
+          $ref: "#/components/responses/Problem"
+  /v1/executions/{id}/events:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+      - name: after
+        in: query
+        description: Return events with a sequence greater than this cursor.
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+    get:
+      operationId: listOrStreamEvents
+      responses:
+        "200":
+          description: JSON replay or an SSE stream, selected with the Accept header.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventList"
+            text/event-stream:
+              schema:
+                type: string
+        "400":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+  /v1/executions/{id}/actions/{actionId}:respond:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+      - name: actionId
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 1
+    post:
+      operationId: respondToAction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ActionResponse"
+      responses:
+        "200":
+          description: Execution resumed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Execution"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+components:
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+  responses:
+    Problem:
+      description: Protocol error.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+  schemas:
+    JsonValue:
+      oneOf:
+        - type: string
+        - type: number
+        - type: boolean
+        - type: "null"
+        - type: array
+          items:
+            $ref: "#/components/schemas/JsonValue"
+        - $ref: "#/components/schemas/JsonObject"
+    JsonObject:
+      type: object
+      additionalProperties:
+        $ref: "#/components/schemas/JsonValue"
+    SupportLevel:
+      type: string
+      enum: [native, emulated, degraded, unsupported]
+    ProviderManifest:
+      type: object
+      required: [id, name, version, protocolVersion, topologies, capabilities]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        version:
+          type: string
+        protocolVersion:
+          const: "2026-08-19"
+        topologies:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            enum: [embedded, subprocess, remote]
+        capabilities:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/SupportLevel"
+        metadata:
+          $ref: "#/components/schemas/JsonObject"
+    RuntimeDescription:
+      type: object
+      required: [name, version, protocolVersion, providers]
+      properties:
+        name:
+          type: string
+        version:
+          type: string
+        protocolVersion:
+          const: "2026-08-19"
+        providers:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProviderManifest"
+    Conversation:
+      type: object
+      required: [id, createdAt, metadata]
+      properties:
+        id:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        metadata:
+          $ref: "#/components/schemas/JsonObject"
+    StartExecutionRequest:
+      type: object
+      required: [conversationId, providerId, input]
+      properties:
+        conversationId:
+          type: string
+        providerId:
+          type: string
+        input:
+          type: string
+        requiredCapabilities:
+          type: array
+          items:
+            type: string
+        config:
+          $ref: "#/components/schemas/JsonObject"
+        idempotencyKey:
+          type: string
+          maxLength: 200
+    Execution:
+      type: object
+      required:
+        - id
+        - conversationId
+        - providerId
+        - state
+        - input
+        - requiredCapabilities
+        - effectiveConfig
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+        conversationId:
+          type: string
+        providerId:
+          type: string
+        state:
+          type: string
+          enum:
+            - queued
+            - starting
+            - running
+            - awaiting_input
+            - awaiting_approval
+            - cancelling
+            - succeeded
+            - failed
+            - cancelled
+        input:
+          type: string
+        requiredCapabilities:
+          type: array
+          items:
+            type: string
+        effectiveConfig:
+          $ref: "#/components/schemas/JsonObject"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        startedAt:
+          type: string
+          format: date-time
+        endedAt:
+          type: string
+          format: date-time
+        finalOutput:
+          type: string
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+    ActionResponse:
+      type: object
+      properties:
+        approved:
+          type: boolean
+        value:
+          $ref: "#/components/schemas/JsonValue"
+        metadata:
+          $ref: "#/components/schemas/JsonObject"
+    RuntimeEvent:
+      type: object
+      required: [id, executionId, sequence, type, time, data]
+      properties:
+        id:
+          type: string
+        executionId:
+          type: string
+        sequence:
+          type: integer
+          minimum: 1
+        type:
+          type: string
+          enum:
+            - run.queued
+            - run.started
+            - output.text.delta
+            - output.text.done
+            - action.required
+            - action.responded
+            - artifact.created
+            - provider.event
+            - run.completed
+            - run.failed
+            - run.cancelled
+        time:
+          type: string
+          format: date-time
+        data:
+          $ref: "#/components/schemas/JsonObject"
+    EventList:
+      type: object
+      required: [events, nextCursor]
+      properties:
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/RuntimeEvent"
+        nextCursor:
+          type: integer
+          minimum: 0
+    Problem:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          $ref: "#/components/schemas/JsonObject"

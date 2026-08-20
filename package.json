@@ -1,0 +1,46 @@
+{
+  "name": "harness-runtime-api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A provider-neutral runtime contract for AI agent harnesses.",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/capa-cloud/harness-runtime-api#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/capa-cloud/harness-runtime-api.git"
+  },
+  "bugs": {
+    "url": "https://github.com/capa-cloud/harness-runtime-api/issues"
+  },
+  "keywords": [
+    "agent",
+    "harness",
+    "runtime",
+    "protocol",
+    "sse"
+  ],
+  "type": "module",
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "pnpm -r --workspace-concurrency=1 build",
+    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test",
+    "dev": "pnpm --filter @harness-runtime/server dev",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "lint": "biome lint .",
+    "sanitize": "bash scripts/scan-public.sh .",
+    "test": "pnpm build && vitest run",
+    "typecheck": "tsc -b && tsc -p tsconfig.tests.json --noEmit"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.9",
+    "@types/node": "22.20.1",
+    "tsx": "4.23.12",
+    "typescript": "7.0.2",
+    "vitest": "4.1.11",
+    "yaml": "2.9.0"
+  }
+}
