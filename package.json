@@ -36,7 +36,7 @@
     "typecheck": "tsc -b && tsc -p tsconfig.tests.json --noEmit"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.9",
+    "@biomejs/biome": "2.5.10",
     "@types/node": "22.20.1",
     "tsx": "4.23.12",
     "typescript": "7.0.2",
