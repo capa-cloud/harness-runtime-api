@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Portable execution lifecycle</title>
+  <desc id="desc">Queued executions start and run, may wait for input or approval, and end as succeeded, failed, or cancelled. Cancellation can begin from any non-terminal state.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#59616d"/>
+    </marker>
+    <style>
+      .title { font: 700 48px Inter, system-ui, sans-serif; fill: #20242b; }
+      .subtitle { font: 400 22px Inter, system-ui, sans-serif; fill: #59616d; }
+      .label { font: 650 25px Inter, system-ui, sans-serif; fill: #20242b; }
+      .small { font: 500 19px Inter, system-ui, sans-serif; fill: #59616d; }
+      .edge { fill: none; stroke: #59616d; stroke-width: 4; marker-end: url(#arrow); }
+      .node { fill: #fff; stroke: #59616d; stroke-width: 3; rx: 12; }
+      .active { fill: #f7fbff; stroke: #1473e6; }
+      .wait { fill: #fffaf0; stroke: #c67a00; }
+      .terminal { fill: #f7f8fa; stroke: #59616d; }
+    </style>
+  </defs>
+  <rect width="1600" height="900" fill="#fff"/>
+  <text x="800" y="82" text-anchor="middle" class="title">Portable Execution Lifecycle</text>
+  <text x="800" y="122" text-anchor="middle" class="subtitle">One bounded attempt, one terminal outcome</text>
+
+  <rect x="110" y="220" width="220" height="96" class="node active"/>
+  <text x="220" y="278" text-anchor="middle" class="label">queued</text>
+  <rect x="430" y="220" width="220" height="96" class="node active"/>
+  <text x="540" y="278" text-anchor="middle" class="label">starting</text>
+  <rect x="750" y="220" width="220" height="96" class="node active"/>
+  <text x="860" y="278" text-anchor="middle" class="label">running</text>
+  <path d="M330 268 H430" class="edge"/>
+  <path d="M650 268 H750" class="edge"/>
+
+  <rect x="620" y="420" width="260" height="96" class="node wait"/>
+  <text x="750" y="478" text-anchor="middle" class="label">awaiting_input</text>
+  <rect x="940" y="420" width="290" height="96" class="node wait"/>
+  <text x="1085" y="478" text-anchor="middle" class="label">awaiting_approval</text>
+  <path d="M812 316 V380 H750 V420" class="edge"/>
+  <path d="M750 420 V378 H840 V316" class="edge"/>
+  <path d="M908 316 V378 H1085 V420" class="edge"/>
+  <path d="M1085 420 V378 H930 V316" class="edge"/>
+  <text x="676" y="374" class="small">request</text>
+  <text x="1010" y="374" class="small">request</text>
+  <text x="775" y="404" class="small">response</text>
+  <text x="1088" y="404" class="small">response</text>
+
+  <rect x="130" y="650" width="340" height="96" class="node wait"/>
+  <text x="300" y="690" text-anchor="middle" class="label">Cancel request</text>
+  <text x="300" y="720" text-anchor="middle" class="small">from any non-terminal state</text>
+  <rect x="570" y="650" width="230" height="96" class="node wait"/>
+  <text x="685" y="708" text-anchor="middle" class="label">cancelling</text>
+  <path d="M470 698 H570" class="edge"/>
+
+  <rect x="900" y="650" width="190" height="96" class="node terminal"/>
+  <text x="995" y="708" text-anchor="middle" class="label">cancelled</text>
+  <rect x="1130" y="650" width="190" height="96" class="node terminal"/>
+  <text x="1225" y="708" text-anchor="middle" class="label">failed</text>
+  <rect x="1360" y="650" width="190" height="96" class="node terminal"/>
+  <text x="1455" y="708" text-anchor="middle" class="label">succeeded</text>
+  <path d="M800 698 H900" class="edge"/>
+  <path d="M970 268 H1225 V650" class="edge"/>
+  <path d="M970 268 H1455 V650" class="edge"/>
+  <text x="1060" y="248" class="small">provider error</text>
+  <text x="1290" y="248" class="small">completed</text>
+
+  <text x="1225" y="805" text-anchor="middle" class="small">Terminal states never return to active states</text>
+</svg>

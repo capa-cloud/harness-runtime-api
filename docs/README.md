@@ -13,8 +13,11 @@ Current protocol version: `2026-09-01`
 | Implement Artifact handling | [Artifact descriptors](guides/artifacts.md) |
 | Configure the DSH adapter | [DeepSeek Harness Provider](guides/dsh-provider.md) |
 | Compare neighboring protocols | [Protocol stack](explanations/protocol-stack.md) |
+| Understand execution transitions | [Execution lifecycle](explanations/execution-lifecycle.md) |
+| Understand capability rejection | [Capability preflight](explanations/capability-preflight.md) |
 | Review architecture decisions | [Specification index](../spec/README.md) |
 | Review deployment risk | [Security policy](../SECURITY.md) |
+| Audit visual provenance | [Visual asset index](../assets/README.md) |
 
 ## Source of Truth
 

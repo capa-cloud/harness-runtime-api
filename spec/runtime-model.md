@@ -46,17 +46,20 @@ representation.
 
 ## State Machine
 
+![Exact portable execution lifecycle.](../assets/execution-lifecycle-en.svg)
+
 ```text
 queued -> starting -> running
                        |-> awaiting_input -> running
                        |-> awaiting_approval -> running
-                       |-> cancelling -> cancelled
                        |-> succeeded
                        |-> failed
+any non-terminal state -> cancelling -> cancelled
 ```
 
 Terminal states are `succeeded`, `failed`, and `cancelled`. A terminal execution never returns to a
-non-terminal state.
+non-terminal state. Cancellation can begin from any non-terminal state; the provider-specific cancel
+hook and abort signal determine how native work is stopped.
 
 ## Authority
 

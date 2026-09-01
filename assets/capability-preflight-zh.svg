@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Capability Preflight 决策流</title>
+  <desc id="desc">调用方检查 Provider Manifest 并选择 requiredCapabilities；只有全部能力存在且不是 unsupported，Runtime 才允许 Provider 开始执行。</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#59616d"/>
+    </marker>
+    <style>
+      .title { font: 700 48px Inter, "PingFang SC", system-ui, sans-serif; fill: #20242b; }
+      .subtitle { font: 400 22px Inter, "PingFang SC", system-ui, sans-serif; fill: #59616d; }
+      .label { font: 650 24px Inter, "PingFang SC", system-ui, sans-serif; fill: #20242b; }
+      .small { font: 500 18px Inter, "PingFang SC", system-ui, sans-serif; fill: #59616d; }
+      .edge { fill: none; stroke: #59616d; stroke-width: 4; marker-end: url(#arrow); }
+      .node { fill: #fff; stroke: #59616d; stroke-width: 3; rx: 12; }
+      .runtime { fill: #f7fbff; stroke: #1473e6; }
+      .decision { fill: #fffaf0; stroke: #c67a00; stroke-width: 3; }
+      .ok { fill: #f5fbf7; stroke: #27864a; }
+      .fail { fill: #fff7f5; stroke: #b84a3a; }
+    </style>
+  </defs>
+  <rect width="1600" height="900" fill="#fff"/>
+  <text x="800" y="82" text-anchor="middle" class="title">Capability Preflight 能力预检</text>
+  <text x="800" y="122" text-anchor="middle" class="subtitle">不支持的任务在 Provider 启动前被拒绝</text>
+
+  <rect x="70" y="255" width="250" height="120" class="node"/>
+  <text x="195" y="305" text-anchor="middle" class="label">读取 Provider</text>
+  <text x="195" y="338" text-anchor="middle" class="label">Manifest</text>
+  <path d="M320 315 H390" class="edge"/>
+
+  <rect x="390" y="255" width="340" height="120" class="node"/>
+  <text x="560" y="300" text-anchor="middle" class="label">调用方选择 Provider</text>
+  <text x="560" y="333" text-anchor="middle" class="small">声明 requiredCapabilities</text>
+  <text x="560" y="357" text-anchor="middle" class="small">调用方策略检查支持等级</text>
+  <path d="M730 315 H800" class="edge"/>
+
+  <rect x="800" y="255" width="300" height="120" class="node runtime"/>
+  <text x="950" y="300" text-anchor="middle" class="label">提交 Execution</text>
+  <text x="950" y="338" text-anchor="middle" class="small">requiredCapabilities: [...]</text>
+  <path d="M1100 315 H1190" class="edge"/>
+
+  <polygon points="1340,220 1490,315 1340,410 1190,315" class="decision"/>
+  <text x="1340" y="300" text-anchor="middle" class="label">每个必需能力</text>
+  <text x="1340" y="332" text-anchor="middle" class="small">都存在且不是</text>
+  <text x="1340" y="356" text-anchor="middle" class="small">unsupported？</text>
+
+  <rect x="1020" y="575" width="330" height="125" class="node ok"/>
+  <text x="1185" y="624" text-anchor="middle" class="label">Execution 入队</text>
+  <text x="1185" y="660" text-anchor="middle" class="small">允许 Provider 开始工作</text>
+  <path d="M1340 410 V500 H1185 V575" class="edge"/>
+  <text x="1185" y="472" text-anchor="middle" class="small">是：native / emulated / degraded</text>
+
+  <rect x="210" y="575" width="410" height="125" class="node fail"/>
+  <text x="415" y="620" text-anchor="middle" class="label">422 CAPABILITY_UNSUPPORTED</text>
+  <text x="415" y="657" text-anchor="middle" class="small">Provider 不会启动</text>
+  <path d="M1340 410 V500 H415 V575" class="edge"/>
+  <text x="690" y="488" class="small">否：能力缺失或 unsupported</text>
+
+  <rect x="210" y="760" width="1140" height="72" class="node runtime"/>
+  <text x="780" y="805" text-anchor="middle" class="small">Runtime 只校验必需能力名称；是否接受 emulated 或 degraded 支持由调用方策略决定。</text>
+</svg>

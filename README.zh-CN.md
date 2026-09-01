@@ -49,6 +49,14 @@ Harness Runtime API 建立三个明确边界：
 | 持久化与重启恢复 | 未提供 | 当前参考状态只存在于进程内 |
 | 身份认证与多租户 | 未提供 | 必须由可信部署边界提供 |
 
+## Capability Preflight 能力预检
+
+![能力预检：调用方判断支持等级是否可接受，Runtime 在 Provider 启动前拒绝缺失或 unsupported 的必需能力。](assets/capability-preflight-zh.svg)
+
+调用方可以在提交执行前检查 Manifest。Runtime 随后校验 `requiredCapabilities` 中的每个名称：
+`native`、`emulated` 和 `degraded` 可以通过；能力缺失或 `unsupported` 会在 Provider 启动前
+返回 `422 CAPABILITY_UNSUPPORTED`。是否接受降级支持仍由调用方策略决定。
+
 ## 快速开始
 
 环境要求：Node.js 22 或更高版本，pnpm 10。
@@ -87,6 +95,8 @@ curl -N -H 'accept: text/event-stream' \
 - **Artifact：** 指向部署层内容的已校验 Portable 描述符。
 - **Provider Manifest：** 在执行开始前声明拓扑和能力支持等级。
 
+![Portable Execution 生命周期：排队、启动、运行、等待人工动作、取消和三个终态。](assets/execution-lifecycle-zh.svg)
+
 规范状态机和不变量以[运行时模型](spec/runtime-model.md)为准，而不是以生成图片为事实源。
 
 ## Artifact 边界
@@ -106,6 +116,8 @@ Runtime 不上传、下载、代理、签名或保留 Artifact 文件字节。UR
 ## 与其他协议的边界
 
 Harness Runtime API 补充现有 Agent 协议，而不是替代它们：
+
+![协议职责地图：AG-UI、A2A、Harness Runtime API、ACP 和 MCP 相邻但各自负责。](assets/protocol-responsibility-zh.png)
 
 | 层次 | 常见协议 | 主要职责 |
 | --- | --- | --- |
@@ -139,6 +151,8 @@ MVP 阶段这些名称只作为 workspace 标识，尚未发布到包注册中�
 - [协议语义](spec/protocol.md)
 - [运行时模型与不变量](spec/runtime-model.md)
 - [协议栈边界](docs/explanations/protocol-stack.md)
+- [Execution 生命周期](docs/explanations/execution-lifecycle.md)
+- [Capability Preflight](docs/explanations/capability-preflight.md)
 - [Artifact 描述符](docs/guides/artifacts.md)
 - [DeepSeek Harness Adapter](docs/guides/dsh-provider.md)
 - [架构决策](spec/README.md)

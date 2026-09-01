@@ -53,6 +53,8 @@ different request returns `409 IDEMPOTENCY_CONFLICT`.
 
 ## Capability Preflight
 
+![Exact capability preflight decision flow.](../assets/capability-preflight-en.svg)
+
 Each requested capability must be advertised as `native`, `emulated`, or `degraded`. `unsupported`
 or an absent capability fails before the provider starts. A caller that cannot tolerate degradation
 should compare the provider manifest before starting the execution.

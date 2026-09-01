@@ -52,6 +52,15 @@ Harness Runtime API introduces three explicit boundaries:
 | Durable persistence and recovery | Not included | Current reference state is process-local |
 | Authentication and multi-tenancy | Not included | Must be supplied by a trusted deployment boundary |
 
+## Capability Preflight
+
+![Capability preflight: the caller evaluates support levels, while Runtime rejects missing or unsupported required capability names before Provider work starts.](assets/capability-preflight-en.svg)
+
+The caller can inspect manifests before submitting an execution. Runtime then checks every name in
+`requiredCapabilities`: `native`, `emulated`, and `degraded` pass; an absent or `unsupported` name
+returns `422 CAPABILITY_UNSUPPORTED` before Provider work starts. Whether degraded support is
+acceptable remains caller policy.
+
 ## Quick Start
 
 Requirements: Node.js 22 or later and pnpm 10.
@@ -91,6 +100,8 @@ Artifact examples.
 - **Artifact:** validated portable descriptor for deployment-owned content.
 - **Provider Manifest:** topology and capability support declared before execution.
 
+![Portable execution lifecycle: queued, starting, running, action waits, cancellation, and terminal states.](assets/execution-lifecycle-en.svg)
+
 The normative state machine and invariants live in the [runtime model](spec/runtime-model.md), not in
 generated diagrams.
 
@@ -113,6 +124,8 @@ content integrity, scanning, and retention remain deployment responsibilities. S
 ## Protocol Boundaries
 
 Harness Runtime API complements existing agent protocols rather than replacing them:
+
+![Protocol responsibility map: AG-UI, A2A, Harness Runtime API, ACP, and MCP have adjacent but distinct responsibilities.](assets/protocol-responsibility-en.png)
 
 | Layer | Typical protocol | Primary concern |
 | --- | --- | --- |
@@ -146,6 +159,8 @@ Package names are workspace identifiers during the MVP and are not yet published
 - [Protocol semantics](spec/protocol.md)
 - [Runtime model and invariants](spec/runtime-model.md)
 - [Protocol stack explanation](docs/explanations/protocol-stack.md)
+- [Execution lifecycle](docs/explanations/execution-lifecycle.md)
+- [Capability preflight](docs/explanations/capability-preflight.md)
 - [Artifact descriptors](docs/guides/artifacts.md)
 - [DeepSeek Harness adapter](docs/guides/dsh-provider.md)
 - [Architecture decisions](spec/README.md)

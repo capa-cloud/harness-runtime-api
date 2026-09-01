@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Capability preflight decision flow</title>
+  <desc id="desc">The caller inspects provider manifests, chooses required capability names, and starts an execution. The runtime starts provider work only when every required capability is present and not unsupported.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#59616d"/>
+    </marker>
+    <style>
+      .title { font: 700 48px Inter, system-ui, sans-serif; fill: #20242b; }
+      .subtitle { font: 400 22px Inter, system-ui, sans-serif; fill: #59616d; }
+      .label { font: 650 24px Inter, system-ui, sans-serif; fill: #20242b; }
+      .small { font: 500 18px Inter, system-ui, sans-serif; fill: #59616d; }
+      .edge { fill: none; stroke: #59616d; stroke-width: 4; marker-end: url(#arrow); }
+      .node { fill: #fff; stroke: #59616d; stroke-width: 3; rx: 12; }
+      .runtime { fill: #f7fbff; stroke: #1473e6; }
+      .decision { fill: #fffaf0; stroke: #c67a00; stroke-width: 3; }
+      .ok { fill: #f5fbf7; stroke: #27864a; }
+      .fail { fill: #fff7f5; stroke: #b84a3a; }
+    </style>
+  </defs>
+  <rect width="1600" height="900" fill="#fff"/>
+  <text x="800" y="82" text-anchor="middle" class="title">Capability Preflight</text>
+  <text x="800" y="122" text-anchor="middle" class="subtitle">Unsupported work is rejected before the Provider starts</text>
+
+  <rect x="70" y="255" width="250" height="120" class="node"/>
+  <text x="195" y="305" text-anchor="middle" class="label">Read Provider</text>
+  <text x="195" y="338" text-anchor="middle" class="label">Manifest</text>
+  <path d="M320 315 H390" class="edge"/>
+
+  <rect x="390" y="255" width="340" height="120" class="node"/>
+  <text x="560" y="300" text-anchor="middle" class="label">Caller selects Provider</text>
+  <text x="560" y="333" text-anchor="middle" class="small">required capability names</text>
+  <text x="560" y="357" text-anchor="middle" class="small" style="font-size:16px">Caller policy checks support levels</text>
+  <path d="M730 315 H800" class="edge"/>
+
+  <rect x="800" y="255" width="300" height="120" class="node runtime"/>
+  <text x="950" y="300" text-anchor="middle" class="label">Start Execution</text>
+  <text x="950" y="338" text-anchor="middle" class="small">requiredCapabilities: [...]</text>
+  <path d="M1100 315 H1190" class="edge"/>
+
+  <polygon points="1340,220 1490,315 1340,410 1190,315" class="decision"/>
+  <text x="1340" y="300" text-anchor="middle" class="label">Every required name</text>
+  <text x="1340" y="332" text-anchor="middle" class="small">present and not</text>
+  <text x="1340" y="356" text-anchor="middle" class="small">unsupported?</text>
+
+  <rect x="1020" y="575" width="330" height="125" class="node ok"/>
+  <text x="1185" y="624" text-anchor="middle" class="label">Queue Execution</text>
+  <text x="1185" y="660" text-anchor="middle" class="small">Provider work may start</text>
+  <path d="M1340 410 V500 H1185 V575" class="edge"/>
+  <text x="1185" y="472" text-anchor="middle" class="small">yes: native / emulated / degraded</text>
+
+  <rect x="210" y="575" width="410" height="125" class="node fail"/>
+  <text x="415" y="620" text-anchor="middle" class="label">422 CAPABILITY_UNSUPPORTED</text>
+  <text x="415" y="657" text-anchor="middle" class="small">No Provider work starts</text>
+  <path d="M1340 410 V500 H415 V575" class="edge"/>
+  <text x="690" y="488" class="small">no: absent or unsupported</text>
+
+  <rect x="210" y="760" width="1140" height="72" class="node runtime"/>
+  <text x="780" y="805" text-anchor="middle" class="small">Runtime enforces required capability names; caller policy decides whether emulated or degraded support is acceptable.</text>
+</svg>
