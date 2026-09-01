@@ -1,5 +1,6 @@
 import {
   type ActionResponse,
+  ArtifactListSchema,
   ConversationSchema,
   type CreateConversationRequest,
   EventListSchema,
@@ -67,6 +68,10 @@ export class HarnessRuntimeClient {
 
   getExecution(id: string) {
     return this.request(`/v1/executions/${encodeURIComponent(id)}`, ExecutionSchema)
+  }
+
+  listArtifacts(id: string) {
+    return this.request(`/v1/executions/${encodeURIComponent(id)}/artifacts`, ArtifactListSchema)
   }
 
   cancelExecution(id: string, reason?: string) {

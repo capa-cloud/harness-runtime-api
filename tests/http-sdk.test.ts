@@ -21,14 +21,23 @@ describe('HTTP API and TypeScript SDK', () => {
       conversationId: conversation.id,
       providerId: 'mock',
       input: 'from sdk',
+      config: { artifactName: 'sdk-result.txt' },
     })
     const streamed = []
     for await (const event of client.streamEvents(execution.id)) streamed.push(event)
     const completed = await client.getExecution(execution.id)
+    const artifacts = await client.listArtifacts(execution.id)
 
     expect(description.providers.map((provider) => provider.id)).toContain('mock')
     expect(conversation.metadata).toEqual({ source: 'sdk-test' })
     expect(completed.finalOutput).toBe('Echo: from sdk')
+    expect(artifacts.artifacts).toEqual([
+      expect.objectContaining({
+        executionId: execution.id,
+        name: 'sdk-result.txt',
+        mediaType: 'text/plain',
+      }),
+    ])
     expect(streamed.at(-1)?.type).toBe('run.completed')
 
     const replayed = []

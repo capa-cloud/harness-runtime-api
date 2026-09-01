@@ -2,7 +2,7 @@
 
 Status: current
 
-Protocol version: `2026-08-19`
+Protocol version: `2026-09-01`
 
 ## Scope
 
@@ -39,8 +39,10 @@ identity and may be answered at most once.
 
 ### Checkpoint and Artifact
 
-Artifacts are portable references or payload metadata. Checkpoints are not part of the MVP. A future
-checkpoint contract must distinguish provider-opaque state from a portable representation.
+Artifacts are validated portable descriptors. They identify the owning execution, media type,
+creation time, optional URI, and metadata, but do not carry bytes. Checkpoints are not part of the
+MVP. A future checkpoint contract must distinguish provider-opaque state from a portable
+representation.
 
 ## State Machine
 
@@ -71,3 +73,5 @@ non-terminal state.
 4. An idempotency key returns the original execution only for an equivalent request.
 5. Cancellation is a request; terminal cancellation is confirmed by `run.cancelled`.
 6. Provider-native payloads do not silently redefine portable event semantics.
+7. Artifact IDs are unique within one execution and every listed artifact has one matching creation
+   event.

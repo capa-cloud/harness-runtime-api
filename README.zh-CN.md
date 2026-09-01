@@ -34,6 +34,7 @@ Harness Runtime API 是一套面向 AI Agent Harness 的厂商中立运行时契
 - Provider 能力清单与执行前能力预检
 - 幂等执行创建
 - 执行取消与人工审批/输入响应
+- 经校验的 Artifact 描述符、创建事件与列表查询
 - HTTP JSON API 与支持断点续传的 SSE 事件流
 - TypeScript 客户端 SDK
 - Mock Provider 与可选的 DeepSeek Harness 适配器
@@ -61,6 +62,21 @@ curl -s -X POST http://127.0.0.1:4310/v1/conversations \
 ```
 
 完整的执行与 SSE 示例参见[快速入门](docs/tutorials/quickstart.md)。
+
+## Artifact 边界
+
+![Artifact 数据流：Runtime 只校验、记录并列出描述符，文件字节保留在部署层 Artifact Store，由应用按自身权限读取。](assets/artifact-data-flow.png)
+
+Provider 通过 `artifact.created` 提交 `id`、`name`、`mediaType`、可选 `uri` 和 metadata。
+Runtime 校验描述符、补齐 `executionId` 与 `createdAt`，然后同时支持 SSE 事件回放和 Artifact
+列表查询：
+
+```bash
+curl -s http://127.0.0.1:4310/v1/executions/$execution_id/artifacts
+```
+
+Runtime 不保存或代理文件字节。Artifact Store、URI 授权、内容传输和保留策略仍由部署层负责。
+详见 [Artifact 指南](docs/guides/artifacts.md)。
 
 ## 项目结构
 

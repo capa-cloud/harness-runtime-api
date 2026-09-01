@@ -54,6 +54,7 @@ describe('DSH provider adapter', () => {
     expect(events.filter((event) => event.type === 'provider.event')).toHaveLength(2)
     expect(close).toHaveBeenCalledTimes(1)
     expect(provider.manifest.capabilities['action.approval']).toBe('unsupported')
+    expect(provider.manifest.capabilities['artifact.list']).toBe('unsupported')
   })
 
   it('closes the subprocess once when abort and explicit cancellation race', async () => {

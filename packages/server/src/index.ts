@@ -49,6 +49,10 @@ export function createApp(runtime: InMemoryHarnessRuntime): Hono {
     context.json(runtime.getExecution(context.req.param('id'))),
   )
 
+  app.get('/v1/executions/:id/artifacts', (context) =>
+    context.json(runtime.listArtifacts(context.req.param('id'))),
+  )
+
   app.post('/v1/executions/:id:cancel', async (context) => {
     const body = await optionalJson(context.req.raw)
     const reason = readReason(body)

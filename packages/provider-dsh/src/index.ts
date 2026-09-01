@@ -74,7 +74,7 @@ const manifest: ProviderManifest = {
   capabilities: {
     [StandardCapability.actionApproval]: 'unsupported',
     [StandardCapability.actionInput]: 'unsupported',
-    [StandardCapability.artifacts]: 'degraded',
+    [StandardCapability.artifacts]: 'unsupported',
     [StandardCapability.cancellation]: 'emulated',
     [StandardCapability.conversationContinuity]: 'unsupported',
     [StandardCapability.eventReplay]: 'emulated',

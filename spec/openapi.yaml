@@ -119,6 +119,20 @@ paths:
                 $ref: "#/components/schemas/Execution"
         "404":
           $ref: "#/components/responses/Problem"
+  /v1/executions/{id}/artifacts:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    get:
+      operationId: listArtifacts
+      responses:
+        "200":
+          description: Portable artifact descriptors emitted by the execution.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArtifactList"
+        "404":
+          $ref: "#/components/responses/Problem"
   /v1/executions/{id}:cancel:
     parameters:
       - $ref: "#/components/parameters/Id"
@@ -243,7 +257,7 @@ components:
         version:
           type: string
         protocolVersion:
-          const: "2026-08-19"
+          const: "2026-09-01"
         topologies:
           type: array
           minItems: 1
@@ -265,7 +279,7 @@ components:
         version:
           type: string
         protocolVersion:
-          const: "2026-08-19"
+          const: "2026-09-01"
         providers:
           type: array
           items:
@@ -370,6 +384,38 @@ components:
           $ref: "#/components/schemas/JsonValue"
         metadata:
           $ref: "#/components/schemas/JsonObject"
+    Artifact:
+      type: object
+      required: [id, executionId, name, mediaType, createdAt, metadata]
+      properties:
+        id:
+          type: string
+          minLength: 1
+        executionId:
+          type: string
+          minLength: 1
+        name:
+          type: string
+          minLength: 1
+        mediaType:
+          type: string
+          minLength: 1
+        uri:
+          type: string
+          minLength: 1
+        createdAt:
+          type: string
+          format: date-time
+        metadata:
+          $ref: "#/components/schemas/JsonObject"
+    ArtifactList:
+      type: object
+      required: [artifacts]
+      properties:
+        artifacts:
+          type: array
+          items:
+            $ref: "#/components/schemas/Artifact"
     RuntimeEvent:
       type: object
       required: [id, executionId, sequence, type, time, data]

@@ -1,7 +1,10 @@
 import { randomUUID } from 'node:crypto'
 import {
   ActionResponseSchema,
+  type Artifact,
+  type ArtifactList,
   CreateConversationRequestSchema,
+  CreateArtifactInputSchema,
   type ActionRequest,
   type ActionResponse,
   type Conversation,
@@ -60,6 +63,7 @@ export class InMemoryHarnessRuntime {
   private readonly conversations = new Map<string, Conversation>()
   private readonly executions = new Map<string, ExecutionRecord>()
   private readonly events = new Map<string, RuntimeEvent[]>()
+  private readonly artifacts = new Map<string, Artifact[]>()
   private readonly pendingActions = new Map<string, PendingAction>()
   private readonly idempotency = new Map<string, IdempotencyRecord>()
   private readonly listeners = new Map<string, Set<EventListener>>()
@@ -167,6 +171,7 @@ export class InMemoryHarnessRuntime {
     }
     this.executions.set(execution.id, record)
     this.events.set(execution.id, [])
+    this.artifacts.set(execution.id, [])
     this.appendEvent(execution.id, 'run.queued', { providerId: request.providerId })
 
     if (request.idempotencyKey) {
@@ -194,6 +199,11 @@ export class InMemoryHarnessRuntime {
     const events = (this.events.get(executionId) ?? []).filter((event) => event.sequence > after)
     const nextCursor = events.at(-1)?.sequence ?? after
     return { events: structuredClone(events), nextCursor }
+  }
+
+  listArtifacts(executionId: string): ArtifactList {
+    this.executionRecord(executionId)
+    return { artifacts: structuredClone(this.artifacts.get(executionId) ?? []) }
   }
 
   async *subscribeEvents(
@@ -282,6 +292,10 @@ export class InMemoryHarnessRuntime {
         signal: record.controller.signal,
         emit: (type: ProviderEventType, data: JsonObject) => {
           if (isTerminalExecutionState(record.public.state)) return
+          if (type === 'artifact.created') {
+            this.appendArtifact(record, data)
+            return
+          }
           this.appendEvent(executionId, type, structuredClone(data))
         },
         requestAction: (input: ProviderActionInput) => this.requestAction(record, input),
@@ -399,6 +413,27 @@ export class InMemoryHarnessRuntime {
     return event
   }
 
+  private appendArtifact(record: ExecutionRecord, data: JsonObject): Artifact {
+    const parsed = CreateArtifactInputSchema.safeParse(data)
+    if (!parsed.success) throw new Error('Provider emitted an invalid artifact descriptor')
+
+    const artifacts = this.artifacts.get(record.public.id)
+    if (!artifacts) throw notFound('Execution', record.public.id)
+    if (artifacts.some((artifact) => artifact.id === parsed.data.id)) {
+      throw new Error(`Provider emitted duplicate artifact id: ${parsed.data.id}`)
+    }
+
+    const artifact: Artifact = {
+      ...parsed.data,
+      executionId: record.public.id,
+      createdAt: now(),
+      metadata: structuredClone(parsed.data.metadata ?? {}),
+    }
+    artifacts.push(artifact)
+    this.appendEvent(record.public.id, 'artifact.created', artifactData(artifact))
+    return artifact
+  }
+
   private appendTerminalEvent(
     record: ExecutionRecord,
     type: Extract<StandardEventType, 'run.completed' | 'run.failed' | 'run.cancelled'>,
@@ -470,6 +505,10 @@ function validationError(message: string): RuntimeError {
 
 function actionRequestData(request: ActionRequest): JsonObject {
   return structuredClone(request) as unknown as JsonObject
+}
+
+function artifactData(artifact: Artifact): JsonObject {
+  return structuredClone(artifact) as unknown as JsonObject
 }
 
 function notFound(kind: string, id: string): RuntimeError {

@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises'
 import { describe, expect, it } from 'vitest'
 import { parse } from 'yaml'
 import { runProviderConformance } from '../packages/conformance/src/index.js'
+import { PROTOCOL_VERSION } from '../packages/protocol/src/index.js'
 import { MockProvider } from '../packages/provider-mock/src/index.js'
 
 describe('conformance and published specification', () => {
@@ -16,14 +17,25 @@ describe('conformance and published specification', () => {
     const document = parse(source) as {
       openapi?: string
       paths?: Record<string, Record<string, unknown>>
+      components?: {
+        schemas?: {
+          RuntimeDescription?: {
+            properties?: { protocolVersion?: { const?: string } }
+          }
+        }
+      }
     }
 
     expect(document.openapi).toBe('3.1.0')
     expect(document.paths?.['/v1/runtime']?.get).toBeDefined()
     expect(document.paths?.['/v1/conversations']?.post).toBeDefined()
     expect(document.paths?.['/v1/executions']?.post).toBeDefined()
+    expect(document.paths?.['/v1/executions/{id}/artifacts']?.get).toBeDefined()
     expect(document.paths?.['/v1/executions/{id}:cancel']?.post).toBeDefined()
     expect(document.paths?.['/v1/executions/{id}/events']?.get).toBeDefined()
     expect(document.paths?.['/v1/executions/{id}/actions/{actionId}:respond']?.post).toBeDefined()
+    expect(
+      document.components?.schemas?.RuntimeDescription?.properties?.protocolVersion?.const,
+    ).toBe(PROTOCOL_VERSION)
   })
 })

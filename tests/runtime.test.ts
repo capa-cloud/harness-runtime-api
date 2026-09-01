@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { InMemoryHarnessRuntime, type RuntimeError } from '../packages/core/src/index.js'
+import {
+  type HarnessProvider,
+  InMemoryHarnessRuntime,
+  type RuntimeError,
+} from '../packages/core/src/index.js'
 import { MockProvider } from '../packages/provider-mock/src/index.js'
 
 describe('in-memory runtime', () => {
@@ -93,6 +97,105 @@ describe('in-memory runtime', () => {
     expect(runtime.getExecution(execution.id).state).toBe('cancelled')
     expect(events.filter((event) => event.type === 'run.cancelled')).toHaveLength(1)
     expect(events.at(-1)?.type).toBe('run.cancelled')
+  })
+
+  it('stores validated artifact descriptors for replay and listing', async () => {
+    const runtime = new InMemoryHarnessRuntime([new MockProvider()])
+    const conversation = runtime.createConversation()
+    const execution = runtime.startExecution({
+      conversationId: conversation.id,
+      providerId: 'mock',
+      input: 'produce an artifact',
+      config: { artifactName: 'analysis.txt' },
+    })
+
+    await collect(runtime.subscribeEvents(execution.id))
+    const artifact = runtime.listArtifacts(execution.id).artifacts[0]
+    const artifactEvent = runtime
+      .listEvents(execution.id)
+      .events.find((event) => event.type === 'artifact.created')
+
+    expect(artifact).toEqual(
+      expect.objectContaining({
+        id: `artifact-${execution.id}`,
+        executionId: execution.id,
+        name: 'analysis.txt',
+        mediaType: 'text/plain',
+        metadata: {},
+      }),
+    )
+    expect(artifactEvent?.data).toEqual(artifact)
+  })
+
+  it('fails the execution when a provider emits an invalid artifact descriptor', async () => {
+    const mock = new MockProvider()
+    const provider: HarnessProvider = {
+      manifest: mock.manifest,
+      async run(context) {
+        context.emit('artifact.created', { name: 'missing-required-fields' })
+        return { finalOutput: 'unreachable' }
+      },
+    }
+    const runtime = new InMemoryHarnessRuntime([provider])
+    const conversation = runtime.createConversation()
+    const execution = runtime.startExecution({
+      conversationId: conversation.id,
+      providerId: 'mock',
+      input: 'invalid artifact',
+    })
+
+    await collect(runtime.subscribeEvents(execution.id))
+
+    expect(runtime.getExecution(execution.id)).toEqual(
+      expect.objectContaining({
+        state: 'failed',
+        error: {
+          code: 'PROVIDER_ERROR',
+          message: 'Provider emitted an invalid artifact descriptor',
+        },
+      }),
+    )
+    expect(runtime.listArtifacts(execution.id).artifacts).toEqual([])
+  })
+
+  it('rejects duplicate artifact ids without duplicating event history', async () => {
+    const mock = new MockProvider()
+    const provider: HarnessProvider = {
+      manifest: mock.manifest,
+      async run(context) {
+        const descriptor = {
+          id: 'artifact-duplicate',
+          name: 'result.txt',
+          mediaType: 'text/plain',
+        }
+        context.emit('artifact.created', descriptor)
+        context.emit('artifact.created', descriptor)
+        return { finalOutput: 'unreachable' }
+      },
+    }
+    const runtime = new InMemoryHarnessRuntime([provider])
+    const conversation = runtime.createConversation()
+    const execution = runtime.startExecution({
+      conversationId: conversation.id,
+      providerId: 'mock',
+      input: 'duplicate artifact',
+    })
+
+    await collect(runtime.subscribeEvents(execution.id))
+
+    expect(runtime.getExecution(execution.id)).toEqual(
+      expect.objectContaining({
+        state: 'failed',
+        error: {
+          code: 'PROVIDER_ERROR',
+          message: 'Provider emitted duplicate artifact id: artifact-duplicate',
+        },
+      }),
+    )
+    expect(runtime.listArtifacts(execution.id).artifacts).toHaveLength(1)
+    expect(
+      runtime.listEvents(execution.id).events.filter((event) => event.type === 'artifact.created'),
+    ).toHaveLength(1)
   })
 })
 

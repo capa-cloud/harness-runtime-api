@@ -2,7 +2,7 @@
 
 Status: current
 
-Protocol version: `2026-08-19`
+Protocol version: `2026-09-01`
 
 ## Commands
 
@@ -11,6 +11,7 @@ Protocol version: `2026-08-19`
 - Start and read an execution.
 - Cancel an execution.
 - Replay or stream execution events after a cursor.
+- List validated artifact descriptors emitted by an execution.
 - Respond to a pending action.
 
 ## Standard Events
@@ -36,6 +37,13 @@ Protocol version: `2026-08-19`
 the terminal event.
 
 Delivery is at least once across reconnects. Consumers must deduplicate by `(executionId, sequence)`.
+
+## Artifacts
+
+`artifact.created` carries a validated descriptor with `id`, `executionId`, `name`, `mediaType`,
+`createdAt`, optional `uri`, and metadata. `GET /v1/executions/{id}/artifacts` returns the descriptors
+in creation order. The portable contract does not store or proxy artifact bytes; the URI, retention,
+authorization, and content transport remain deployment responsibilities.
 
 ## Idempotency
 

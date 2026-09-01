@@ -32,6 +32,15 @@ curl -N -H 'accept: text/event-stream' \
   "http://127.0.0.1:4310/v1/executions/$execution_id/events?after=0"
 ```
 
+List artifact descriptors emitted by the execution:
+
+```bash
+curl -s "http://127.0.0.1:4310/v1/executions/$execution_id/artifacts"
+```
+
+The default Mock execution emits an artifact only when its config contains `artifactName`. See the
+[Artifact guide](../guides/artifacts.md) for the provider contract and content-storage boundary.
+
 To exercise approval, add `"config":{"requireApproval":true}` to the execution request, read the
 action ID from `action.required.data.id`, and respond:
 

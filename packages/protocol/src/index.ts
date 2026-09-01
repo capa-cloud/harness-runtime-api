@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-export const PROTOCOL_VERSION = '2026-08-19' as const
+export const PROTOCOL_VERSION = '2026-09-01' as const
 
 export type JsonPrimitive = string | number | boolean | null
 export type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue }
@@ -144,6 +144,27 @@ export const ActionResponseSchema = z.object({
   metadata: JsonObjectSchema.optional(),
 })
 export type ActionResponse = z.infer<typeof ActionResponseSchema>
+
+export const CreateArtifactInputSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  mediaType: z.string().min(1),
+  uri: z.string().min(1).optional(),
+  metadata: JsonObjectSchema.optional(),
+})
+export type CreateArtifactInput = z.infer<typeof CreateArtifactInputSchema>
+
+export const ArtifactSchema = CreateArtifactInputSchema.extend({
+  executionId: z.string().min(1),
+  createdAt: z.iso.datetime(),
+  metadata: JsonObjectSchema,
+})
+export type Artifact = z.infer<typeof ArtifactSchema>
+
+export const ArtifactListSchema = z.object({
+  artifacts: z.array(ArtifactSchema),
+})
+export type ArtifactList = z.infer<typeof ArtifactListSchema>
 
 export const StandardEventTypeSchema = z.enum([
   'run.queued',

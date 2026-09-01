@@ -5,4 +5,5 @@ is suitable for development, tests, and one-process embedding. It is not a durab
 scheduler.
 
 Provider code receives a bounded execution context with an abort signal, normalized event emitter,
-and action-request primitive. The runtime remains authoritative for portable state and event order.
+and action-request primitive. The runtime remains authoritative for portable state, event order,
+and validated artifact descriptors.

@@ -41,6 +41,7 @@ Provider  Provider   Provider
 - Provider capability manifests and required-capability preflight
 - Idempotent execution creation
 - Cancellation and human action responses
+- Validated artifact descriptors with event and list access
 - HTTP JSON API and resumable SSE stream
 - TypeScript client SDK
 - Mock provider and optional DeepSeek Harness adapter
@@ -68,6 +69,9 @@ curl -s -X POST http://127.0.0.1:4310/v1/conversations \
 ```
 
 See [Quickstart](docs/tutorials/quickstart.md) for a complete execution and SSE example.
+
+Artifact bytes remain in deployment-owned storage. The runtime validates and lists portable
+descriptors without proxying content; see the [Artifact guide](docs/guides/artifacts.md).
 
 ## Packages
 
