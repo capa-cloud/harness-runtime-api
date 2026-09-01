@@ -62,7 +62,7 @@ content before emitting the descriptor so consumers do not observe a reference t
 
 ## Content Boundary
 
-![Artifact data flow: the runtime validates, records, and lists descriptors while bytes remain in a deployment-owned store.](../../assets/artifact-data-flow.png)
+![Artifact data flow: the runtime validates, records, and lists descriptors while bytes remain in a deployment-owned store.](../../assets/artifact-data-flow-en.png)
 
 The reference runtime does not upload, download, proxy, sign, or retain artifact bytes. A deployment
 owns:

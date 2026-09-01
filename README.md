@@ -1,51 +1,56 @@
 # Harness Runtime API
 
 <p align="center">
+  A provider-neutral control and event contract for AI agent harnesses.
+</p>
+
+<p align="center">
   <strong>English</strong> | <a href="README.zh-CN.md">简体中文</a>
 </p>
 
-Harness Runtime API is a provider-neutral contract for starting, observing, controlling, and
-recovering AI agent harness executions. Applications integrate with one stable lifecycle while
-runtime providers adapt frameworks such as DeepSeek Harness or an application-specific agent loop.
+> **Experimental:** runtime `0.1.0`, protocol `2026-09-01`. The reference implementation is
+> in-memory, unauthenticated, and intended for development or one-process embedding.
 
-The project is an early MVP. It standardizes integration semantics, not model behavior or portable
-checkpoints.
+![Harness Runtime API architecture: one application contract connects through capability-aware provider adapters to multiple peer harnesses.](assets/harness-runtime-architecture-en.png)
 
-## Why
+Harness Runtime API standardizes how an application starts, observes, and controls bounded agent
+executions without forcing every harness to expose the same native SDK. A provider adapter preserves
+framework-specific behavior while the portable layer owns lifecycle state, event ordering,
+capability negotiation, actions, cancellation, and Artifact descriptors.
 
-Agent harnesses expose similar concepts through incompatible APIs: sessions, streaming events,
-human approval, cancellation, artifacts, and recovery. This project separates those concepts into:
+It is not another general-purpose agent and does not standardize prompts, model behavior, tool
+implementations, native checkpoints, or sandbox internals.
 
-- a versioned protocol and state machine;
-- a provider SPI with explicit capability negotiation;
-- an embeddable in-memory runtime;
-- an optional HTTP/SSE server;
-- client SDKs and provider conformance checks.
+## Why This Exists
 
-```text
-Application or control plane
-            |
-   Harness Runtime API
-            |
-  +---------+----------+
-  |         |          |
- Mock      DSH       Custom
-Provider  Provider   Provider
-```
+Agent harnesses repeatedly expose the same integration concepts through incompatible contracts:
+sessions, streaming output, approval, cancellation, artifacts, and process lifecycle. Coupling an
+application directly to one harness makes provider changes expensive and hides semantic differences
+until runtime.
 
-## MVP Features
+Harness Runtime API introduces three explicit boundaries:
 
-- Conversations and bounded executions
-- Append-only events with monotonic cursors
-- Explicit execution state machine
-- Provider capability manifests and required-capability preflight
-- Idempotent execution creation
-- Cancellation and human action responses
-- Validated artifact descriptors with event and list access
-- HTTP JSON API and resumable SSE stream
-- TypeScript client SDK
-- Mock provider and optional DeepSeek Harness adapter
-- Reusable provider conformance runner
+| Boundary | Responsibility |
+| --- | --- |
+| Portable protocol | Conversations, executions, events, actions, artifacts, and stable errors |
+| Provider SPI | Native SDK/process adaptation and honest capability declarations |
+| Deployment | Identity, authorization, persistence, isolation, scheduling, storage, and telemetry |
+
+## Current Surface
+
+| Capability | Status | Notes |
+| --- | --- | --- |
+| Conversations and bounded executions | Available | One portable conversation can own multiple executions |
+| Execution idempotency | Available | Conflicting reuse returns `IDEMPOTENCY_CONFLICT` |
+| Event replay and SSE streaming | Available | Monotonic per-execution cursor, at-least-once reconnect semantics |
+| Capability preflight | Available | `native`, `emulated`, `degraded`, or `unsupported` |
+| Human approval and input | Available | Provider execution pauses on a correlated action request |
+| Cancellation | Available | Portable cancellation with provider-specific cleanup |
+| Artifact descriptors | Available | Validated creation events and list API; bytes stay outside Runtime |
+| Mock Provider | Available | Deterministic development and conformance provider |
+| DSH Provider | Experimental | Optional subprocess adapter for the pinned public SDK range |
+| Durable persistence and recovery | Not included | Current reference state is process-local |
+| Authentication and multi-tenancy | Not included | Must be supplied by a trusted deployment boundary |
 
 ## Quick Start
 
@@ -57,56 +62,109 @@ pnpm check
 pnpm dev
 ```
 
-The reference server listens on `127.0.0.1:4310` by default. It is intentionally unauthenticated
-and must not be exposed to an untrusted network.
+The reference server listens on `127.0.0.1:4310` and registers the Mock Provider.
 
 ```bash
-curl -s http://127.0.0.1:4310/v1/runtime
-
-curl -s -X POST http://127.0.0.1:4310/v1/conversations \
+conversation_id=$(curl -s -X POST http://127.0.0.1:4310/v1/conversations \
   -H 'content-type: application/json' \
-  -d '{"metadata":{"example":"quickstart"}}'
+  -d '{"metadata":{"source":"readme"}}' | node -pe \
+  'JSON.parse(require("fs").readFileSync(0, "utf8")).id')
+
+execution_id=$(curl -s -X POST http://127.0.0.1:4310/v1/executions \
+  -H 'content-type: application/json' \
+  -d "{\"conversationId\":\"$conversation_id\",\"providerId\":\"mock\",\"input\":\"hello runtime\",\"idempotencyKey\":\"readme-1\"}" | node -pe \
+  'JSON.parse(require("fs").readFileSync(0, "utf8")).id')
+
+curl -N -H 'accept: text/event-stream' \
+  "http://127.0.0.1:4310/v1/executions/$execution_id/events?after=0"
 ```
 
-See [Quickstart](docs/tutorials/quickstart.md) for a complete execution and SSE example.
+See the [complete quickstart](docs/tutorials/quickstart.md) for approval, cancellation, replay, and
+Artifact examples.
 
-Artifact bytes remain in deployment-owned storage. The runtime validates and lists portable
-descriptors without proxying content; see the [Artifact guide](docs/guides/artifacts.md).
+## Portable Model
+
+- **Conversation:** caller-facing multi-turn identity.
+- **Execution:** one bounded attempt with explicit state and terminal outcome.
+- **Event:** append-only observation with a sequence cursor.
+- **Action:** correlated approval or input request that pauses provider progress.
+- **Artifact:** validated portable descriptor for deployment-owned content.
+- **Provider Manifest:** topology and capability support declared before execution.
+
+The normative state machine and invariants live in the [runtime model](spec/runtime-model.md), not in
+generated diagrams.
+
+## Artifact Boundary
+
+![Artifact data flow: Runtime validates and lists portable descriptors while bytes remain in deployment-owned storage.](assets/artifact-data-flow-en.png)
+
+Providers emit `artifact.created` with `id`, `name`, `mediaType`, optional `uri`, and metadata. The
+Runtime validates the descriptor, assigns `executionId` and `createdAt`, records the event, and makes
+the descriptor available through:
+
+```http
+GET /v1/executions/{executionId}/artifacts
+```
+
+The Runtime does not upload, download, proxy, sign, or retain Artifact bytes. URI authorization,
+content integrity, scanning, and retention remain deployment responsibilities. See the
+[Artifact guide](docs/guides/artifacts.md).
+
+## Protocol Boundaries
+
+Harness Runtime API complements existing agent protocols rather than replacing them:
+
+| Layer | Typical protocol | Primary concern |
+| --- | --- | --- |
+| User interface | AG-UI or application-specific events | Project agent state into a UI |
+| Agent peers | A2A | Communication between independent agents |
+| Control plane | **Harness Runtime API** | Start, observe, and control harness executions |
+| Coding client | ACP | Connect coding-agent clients and agents |
+| Tools and context | MCP | Connect a harness to tools, data, and context |
+
+An adapter may use ACP or a framework SDK internally. The portable runtime additionally defines
+idempotency, capability preflight, cursor replay, terminal-state semantics, and action correlation.
 
 ## Packages
 
 | Package | Purpose |
 | --- | --- |
-| `@harness-runtime/protocol` | Schemas, types, events, and capability vocabulary |
+| `@harness-runtime/protocol` | Zod schemas, TypeScript types, events, and capability vocabulary |
 | `@harness-runtime/core` | Provider SPI and in-memory reference runtime |
 | `@harness-runtime/provider-mock` | Deterministic provider for development and tests |
 | `@harness-runtime/provider-dsh` | Optional DeepSeek Harness subprocess adapter |
-| `@harness-runtime/server` | HTTP/SSE reference server |
-| `@harness-runtime/sdk-typescript` | TypeScript HTTP client |
-| `@harness-runtime/conformance` | Provider lifecycle conformance runner |
+| `@harness-runtime/server` | HTTP/JSON and SSE reference binding |
+| `@harness-runtime/sdk-typescript` | Validating TypeScript HTTP/SSE client |
+| `@harness-runtime/conformance` | Reusable provider lifecycle checks |
 
-Package names are workspace identifiers during the MVP and are not yet published to a package
-registry.
+Package names are workspace identifiers during the MVP and are not yet published to a registry.
 
-## Protocol Boundaries
+## Documentation
 
-- MCP connects a harness to tools and context.
-- ACP connects coding-agent clients and agents.
-- AG-UI can project execution events into a frontend.
-- A2A connects independent agents.
-- Harness Runtime API connects a control plane or application to a harness execution provider.
+- [Documentation map](docs/README.md)
+- [OpenAPI 3.1](spec/openapi.yaml)
+- [Protocol semantics](spec/protocol.md)
+- [Runtime model and invariants](spec/runtime-model.md)
+- [Protocol stack explanation](docs/explanations/protocol-stack.md)
+- [Artifact descriptors](docs/guides/artifacts.md)
+- [DeepSeek Harness adapter](docs/guides/dsh-provider.md)
+- [Architecture decisions](spec/README.md)
+- [Security policy](SECURITY.md)
 
-See [Runtime model](spec/runtime-model.md) and [Protocol](spec/protocol.md) for normative behavior.
+## Next Design Areas
 
-## Security
+- Durable storage SPI and restart recovery semantics
+- Additional provider adapters and capability-specific conformance profiles
+- More language SDKs generated from the portable contract
+- Deployment examples that add authentication, tenant isolation, and telemetry without moving those
+  concerns into the core protocol
 
-The reference runtime is not a multi-tenant platform. Authentication, authorization, credential
-brokering, durable distributed scheduling, sandbox isolation, and long-term memory remain deployment
-responsibilities. See [SECURITY.md](SECURITY.md).
+These are design directions, not committed release dates.
 
-## Status
+## Contributing
 
-Version `0.1.0` is experimental. Backward compatibility is not guaranteed before `1.0.0`.
+Read [CONTRIBUTING.md](CONTRIBUTING.md), run `pnpm check` and `pnpm sanitize`, and document any
+provider behavior that is emulated, degraded, or unsupported.
 
 ## License
 
