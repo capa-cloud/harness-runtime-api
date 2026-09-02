@@ -2,7 +2,7 @@
 
 Status: current
 
-Protocol version: `2026-09-01`
+Protocol version: `2026-09-02`
 
 ## Scope
 
@@ -78,3 +78,6 @@ hook and abort signal determine how native work is stopped.
 6. Provider-native payloads do not silently redefine portable event semantics.
 7. Artifact IDs are unique within one execution and every listed artifact has one matching creation
    event.
+8. Concurrent cancellation calls invoke provider cleanup at most once and append one terminal event.
+9. An accepted Action response can be applied at most once; a duplicate returns
+   `ACTION_ALREADY_RESOLVED`.

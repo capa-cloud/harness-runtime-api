@@ -1,5 +1,5 @@
 import { RuntimeError, type InMemoryHarnessRuntime } from '@harness-runtime/core'
-import type { Problem } from '@harness-runtime/protocol'
+import { CancelExecutionRequestSchema, type Problem } from '@harness-runtime/protocol'
 import { Hono } from 'hono'
 import { streamSSE } from 'hono/streaming'
 
@@ -55,7 +55,7 @@ export function createApp(runtime: InMemoryHarnessRuntime): Hono {
 
   app.post('/v1/executions/:id:cancel', async (context) => {
     const body = await optionalJson(context.req.raw)
-    const reason = readReason(body)
+    const reason = readCancelReason(body)
     const executionId = suffixedParam(context.req.param('id:cancel'), ':cancel')
     return context.json(await runtime.cancelExecution(executionId, reason))
   })
@@ -120,10 +120,12 @@ function readCursor(value: string | undefined): number {
   return cursor
 }
 
-function readReason(value: unknown): string | undefined {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) return undefined
-  const reason = (value as Record<string, unknown>).reason
-  return typeof reason === 'string' ? reason : undefined
+function readCancelReason(value: unknown): string | undefined {
+  const parsed = CancelExecutionRequestSchema.safeParse(value)
+  if (!parsed.success) {
+    throw new RuntimeError('VALIDATION_ERROR', 'Invalid cancellation request', 400)
+  }
+  return parsed.data.reason
 }
 
 function requiredParam(value: string | undefined): string {

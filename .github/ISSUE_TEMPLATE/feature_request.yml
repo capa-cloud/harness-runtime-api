@@ -1,0 +1,47 @@
+name: Feature request
+description: Propose a portable capability, provider extension, SDK, or deployment example.
+title: "proposal: "
+labels: [enhancement]
+body:
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Proposed scope
+      options:
+        - Portable protocol
+        - Provider SPI or adapter
+        - Reference runtime
+        - HTTP / SDK binding
+        - Conformance
+        - Deployment example
+        - Documentation
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: Describe the provider-neutral problem, not only one framework API.
+    validations:
+      required: true
+  - type: textarea
+    id: contract
+    attributes:
+      label: Proposed contract and alternatives
+      description: Explain capability negotiation, degradation, compatibility, and rejected alternatives.
+    validations:
+      required: true
+  - type: textarea
+    id: verification
+    attributes:
+      label: Conformance and verification
+      description: State how providers and clients could prove compatible behavior.
+  - type: checkboxes
+    id: boundaries
+    attributes:
+      label: Boundary checks
+      options:
+        - label: The proposal does not assume private infrastructure or unpublished dependencies.
+          required: true
+        - label: Provider-specific payloads remain namespaced unless a portable contract is justified.
+          required: true

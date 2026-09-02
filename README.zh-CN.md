@@ -8,7 +8,7 @@
   <a href="README.md">English</a> | <strong>简体中文</strong>
 </p>
 
-> **实验阶段：** Runtime `0.1.0`，协议 `2026-09-01`。当前参考实现使用内存状态、没有身份认证，
+> **实验阶段：** Runtime `0.1.0`，协议 `2026-09-02`。当前参考实现使用内存状态、没有身份认证，
 > 适合本地开发、测试或单进程嵌入，不是可直接暴露到公网的多租户平台。
 
 ![Harness Runtime API 架构：应用通过统一契约连接 Runtime，Provider SPI 基于能力预检适配多个并列 Harness，并统一回流事件。](assets/harness-runtime-architecture.png)
@@ -157,6 +157,8 @@ MVP 阶段这些名称只作为 workspace 标识，尚未发布到包注册中�
 - [DeepSeek Harness Adapter](docs/guides/dsh-provider.md)
 - [架构决策](spec/README.md)
 - [安全策略](SECURITY.md)
+- [变更记录](CHANGELOG.md)
+- [发布流程](RELEASING.md)
 
 ## 下一步设计方向
 

@@ -1,0 +1,51 @@
+name: Bug report
+description: Report a reproducible protocol, runtime, provider, server, or SDK defect.
+title: "bug: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Do not include credentials, private prompts, private endpoints, or real user data.
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - Protocol / OpenAPI
+        - Core runtime
+        - HTTP / SSE server
+        - TypeScript SDK
+        - Mock Provider
+        - DSH Provider
+        - Conformance runner
+        - Documentation
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Runtime and protocol version
+      placeholder: runtime 0.1.0, protocol 2026-09-02
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Include synthetic input, commands, expected behavior, and actual behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Sanitized evidence
+      description: Add relevant events or errors after removing sensitive information.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Submission checks
+      options:
+        - label: I removed credentials, private infrastructure names, and real user data.
+          required: true
+        - label: I searched existing issues for the same behavior.
+          required: true

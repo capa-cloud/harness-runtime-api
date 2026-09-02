@@ -35,6 +35,7 @@ interface ExecutionRecord {
   provider: HarnessProvider
   controller: AbortController
   terminalEventAppended: boolean
+  cancellation?: Promise<void>
 }
 
 interface PendingAction {
@@ -65,6 +66,7 @@ export class InMemoryHarnessRuntime {
   private readonly events = new Map<string, RuntimeEvent[]>()
   private readonly artifacts = new Map<string, Artifact[]>()
   private readonly pendingActions = new Map<string, PendingAction>()
+  private readonly resolvedActions = new Map<string, string>()
   private readonly idempotency = new Map<string, IdempotencyRecord>()
   private readonly listeners = new Map<string, Set<EventListener>>()
 
@@ -231,22 +233,38 @@ export class InMemoryHarnessRuntime {
     const record = this.executionRecord(executionId)
     if (isTerminalExecutionState(record.public.state)) return structuredClone(record.public)
 
+    record.cancellation ??= this.performCancellation(record, reason)
+    await record.cancellation
+    return structuredClone(record.public)
+  }
+
+  private async performCancellation(record: ExecutionRecord, reason?: string): Promise<void> {
+    const executionId = record.public.id
     this.setState(record, 'cancelling')
     record.controller.abort(new ExecutionAbortedError(reason))
     this.rejectPendingActions(executionId, new ExecutionAbortedError(reason))
 
+    let providerCleanupError: string | undefined
     try {
       await record.provider.cancel?.(executionId, reason)
+    } catch (error) {
+      providerCleanupError = errorMessage(error)
     } finally {
-      this.finalizeCancelled(record, reason)
+      this.finalizeCancelled(record, reason, providerCleanupError)
     }
-    return structuredClone(record.public)
   }
 
   respondAction(executionId: string, actionId: string, input: unknown): Execution {
     const record = this.executionRecord(executionId)
     const pending = this.pendingActions.get(actionId)
     if (!pending || pending.request.executionId !== executionId) {
+      if (this.resolvedActions.get(actionId) === executionId) {
+        throw new RuntimeError(
+          'ACTION_ALREADY_RESOLVED',
+          `Action already resolved: ${actionId}`,
+          409,
+        )
+      }
       throw new RuntimeError('ACTION_NOT_FOUND', `Action not found: ${actionId}`, 404)
     }
     if (pending.settled) {
@@ -263,6 +281,7 @@ export class InMemoryHarnessRuntime {
     const response = actionResponse(input)
     pending.settled = true
     this.pendingActions.delete(actionId)
+    this.resolvedActions.set(actionId, executionId)
     this.setState(record, 'running')
     this.appendEvent(executionId, 'action.responded', {
       actionId,
@@ -275,7 +294,7 @@ export class InMemoryHarnessRuntime {
   private async runExecution(executionId: string): Promise<void> {
     const record = this.executionRecord(executionId)
     if (record.controller.signal.aborted || record.public.state === 'cancelled') {
-      this.finalizeCancelled(record)
+      if (!record.cancellation) this.finalizeCancelled(record)
       return
     }
 
@@ -303,7 +322,7 @@ export class InMemoryHarnessRuntime {
 
       const result = await record.provider.run(context)
       if (record.controller.signal.aborted) {
-        this.finalizeCancelled(record)
+        if (!record.cancellation) this.finalizeCancelled(record)
         return
       }
       if (isTerminalExecutionState(record.public.state)) return
@@ -314,7 +333,7 @@ export class InMemoryHarnessRuntime {
       this.appendTerminalEvent(record, 'run.completed', { finalOutput })
     } catch (error) {
       if (record.controller.signal.aborted || record.public.state === 'cancelling') {
-        this.finalizeCancelled(record, errorMessage(error))
+        if (!record.cancellation) this.finalizeCancelled(record, errorMessage(error))
         return
       }
       if (isTerminalExecutionState(record.public.state)) return
@@ -444,11 +463,18 @@ export class InMemoryHarnessRuntime {
     this.appendEvent(record.public.id, type, data)
   }
 
-  private finalizeCancelled(record: ExecutionRecord, reason?: string): void {
+  private finalizeCancelled(
+    record: ExecutionRecord,
+    reason?: string,
+    providerCleanupError?: string,
+  ): void {
     if (record.public.state === 'cancelled' && record.terminalEventAppended) return
     if (record.public.state === 'succeeded' || record.public.state === 'failed') return
     this.setState(record, 'cancelled', { endedAt: now() })
-    this.appendTerminalEvent(record, 'run.cancelled', reason ? { reason } : {})
+    this.appendTerminalEvent(record, 'run.cancelled', {
+      ...(reason === undefined ? {} : { reason }),
+      ...(providerCleanupError === undefined ? {} : { providerCleanupError }),
+    })
   }
 
   private executionRecord(id: string): ExecutionRecord {

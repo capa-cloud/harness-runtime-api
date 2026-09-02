@@ -2,7 +2,7 @@
 
 Status: current
 
-Protocol version: `2026-09-01`
+Protocol version: `2026-09-02`
 
 ## Contract
 

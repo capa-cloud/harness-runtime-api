@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-export const PROTOCOL_VERSION = '2026-09-01' as const
+export const PROTOCOL_VERSION = '2026-09-02' as const
 
 export type JsonPrimitive = string | number | boolean | null
 export type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue }
@@ -123,6 +123,11 @@ export const StartExecutionRequestSchema = z.object({
   idempotencyKey: z.string().min(1).max(200).optional(),
 })
 export type StartExecutionRequest = z.infer<typeof StartExecutionRequestSchema>
+
+export const CancelExecutionRequestSchema = z.object({
+  reason: z.string().min(1).max(500).optional(),
+})
+export type CancelExecutionRequest = z.infer<typeof CancelExecutionRequestSchema>
 
 export const ActionKindSchema = z.enum(['approval', 'input'])
 export type ActionKind = z.infer<typeof ActionKindSchema>

@@ -2,7 +2,7 @@
 
 Status: current
 
-Protocol version: `2026-09-01`
+Protocol version: `2026-09-02`
 
 ## Commands
 
@@ -50,6 +50,13 @@ authorization, and content transport remain deployment responsibilities.
 `POST /v1/executions` accepts `idempotencyKey`. Reusing a key with an equivalent conversation,
 provider, input, required capabilities, and config returns the original execution. Reusing it with a
 different request returns `409 IDEMPOTENCY_CONFLICT`.
+
+## Cancellation
+
+`POST /v1/executions/{id}:cancel` accepts an optional non-empty `reason` of at most 500 characters.
+Concurrent requests share one provider cleanup operation and one terminal event. A provider cleanup
+failure does not create a contradictory HTTP failure after portable cancellation is confirmed; the
+message is recorded as `run.cancelled.providerCleanupError`.
 
 ## Capability Preflight
 

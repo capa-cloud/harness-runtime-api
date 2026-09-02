@@ -1,6 +1,6 @@
 # Documentation Map
 
-Current protocol version: `2026-09-01`
+Current protocol version: `2026-09-02`
 
 ## Start Here
 
@@ -18,6 +18,8 @@ Current protocol version: `2026-09-01`
 | Review architecture decisions | [Specification index](../spec/README.md) |
 | Review deployment risk | [Security policy](../SECURITY.md) |
 | Audit visual provenance | [Visual asset index](../assets/README.md) |
+| Review release history | [Changelog](../CHANGELOG.md) |
+| Prepare a release | [Release process](../RELEASING.md) |
 
 ## Source of Truth
 

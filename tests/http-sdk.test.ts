@@ -58,6 +58,17 @@ describe('HTTP API and TypeScript SDK', () => {
       code: 'VALIDATION_ERROR',
       message: 'Invalid execution request',
     })
+
+    const invalidCancellation = await app.request('/v1/executions/missing:cancel', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ reason: 42 }),
+    })
+    expect(invalidCancellation.status).toBe(400)
+    expect(await invalidCancellation.json()).toEqual({
+      code: 'VALIDATION_ERROR',
+      message: 'Invalid cancellation request',
+    })
   })
 
   it('surfaces protocol errors as typed SDK errors', async () => {

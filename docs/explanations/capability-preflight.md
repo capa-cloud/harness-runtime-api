@@ -2,7 +2,7 @@
 
 Status: current
 
-Protocol version: `2026-09-01`
+Protocol version: `2026-09-02`
 
 ![Capability preflight decision flow from manifest inspection to provider start or rejection.](../../assets/capability-preflight-en.svg)
 

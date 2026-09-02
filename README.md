@@ -8,7 +8,7 @@
   <strong>English</strong> | <a href="README.zh-CN.md">简体中文</a>
 </p>
 
-> **Experimental:** runtime `0.1.0`, protocol `2026-09-01`. The reference implementation is
+> **Experimental:** runtime `0.1.0`, protocol `2026-09-02`. The reference implementation is
 > in-memory, unauthenticated, and intended for development or one-process embedding.
 
 ![Harness Runtime API architecture: one application contract connects through capability-aware provider adapters to multiple peer harnesses.](assets/harness-runtime-architecture-en.png)
@@ -165,6 +165,8 @@ Package names are workspace identifiers during the MVP and are not yet published
 - [DeepSeek Harness adapter](docs/guides/dsh-provider.md)
 - [Architecture decisions](spec/README.md)
 - [Security policy](SECURITY.md)
+- [Changelog](CHANGELOG.md)
+- [Release process](RELEASING.md)
 
 ## Next Design Areas
 
