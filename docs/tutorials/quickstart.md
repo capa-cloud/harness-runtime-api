@@ -1,5 +1,8 @@
 # Quickstart
 
+For the lifecycle around these commands, see the
+[Execution control loop](../explanations/execution-control-loop.md).
+
 Start the reference server:
 
 ```bash

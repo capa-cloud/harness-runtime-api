@@ -86,6 +86,13 @@ curl -N -H 'accept: text/event-stream' \
 
 审批、取消、事件回放和 Artifact 示例参见[完整快速入门](docs/tutorials/quickstart.md)。
 
+## Execution 控制回路
+
+![一个 Execution 的控制回路：调用方控制 Runtime，Runtime 调用 Provider，观察结果形成有序事件，人工 Action 暂停并恢复同一次执行。](assets/execution-control-loop-zh.png)
+
+命令统一进入 Runtime；Provider Native 工作不会绕过 Portable Event 与 Action 边界。SSE 回放、
+人工响应、最终输出和取消始终关联同一个 Execution。详见[控制回路说明](docs/explanations/execution-control-loop.md)。
+
 ## Portable 模型
 
 - **Conversation：** 面向调用方的多轮身份。
@@ -98,6 +105,14 @@ curl -N -H 'accept: text/event-stream' \
 ![Portable Execution 生命周期：排队、启动、运行、等待人工动作、取消和三个终态。](assets/execution-lifecycle-zh.svg)
 
 规范状态机和不变量以[运行时模型](spec/runtime-model.md)为准，而不是以生成图片为事实源。
+
+## Portable 与 Provider Native 边界
+
+![Provider SPI 将 Portable 命令映射到 Native Harness，并把 Provider 观察结果规范化为 Portable Event。](assets/provider-boundary-zh.png)
+
+Portable 层稳定的是生命周期集成，而不是模型行为。原生 Session、Agent Loop、模型/工具调用、
+进程生命周期和不透明 Provider 观察结果仍保留在 Provider SPI 后面。详见
+[Provider 边界说明](docs/explanations/provider-boundary.md)。
 
 ## Artifact 边界
 
@@ -153,14 +168,22 @@ MVP 阶段这些名称只作为 workspace 标识，尚未发布到包注册中�
 - [协议栈边界](docs/explanations/protocol-stack.md)
 - [Execution 生命周期](docs/explanations/execution-lifecycle.md)
 - [Capability Preflight](docs/explanations/capability-preflight.md)
+- [Execution 控制回路](docs/explanations/execution-control-loop.md)
+- [Portable 与 Provider Native 边界](docs/explanations/provider-boundary.md)
 - [Artifact 描述符](docs/guides/artifacts.md)
 - [DeepSeek Harness Adapter](docs/guides/dsh-provider.md)
+- [生产部署边界](docs/guides/production-deployment.md)
 - [架构决策](spec/README.md)
 - [安全策略](SECURITY.md)
 - [变更记录](CHANGELOG.md)
 - [发布流程](RELEASING.md)
 
 ## 下一步设计方向
+
+![参考 MVP 与生产部署：Portable Contract 保持不变，生产可靠性和安全能力由部署层拥有。](assets/production-boundary-zh.png)
+
+参考服务用于证明协议行为，不是生产平台。[生产部署指南](docs/guides/production-deployment.md)列出
+可信部署必须增加的控制，同时避免把这些能力耦合进 Portable Contract。
 
 - Durable Storage SPI 与重启恢复语义
 - 更多 Provider Adapter 和按能力划分的一致性测试 Profile

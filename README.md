@@ -91,6 +91,14 @@ curl -N -H 'accept: text/event-stream' \
 See the [complete quickstart](docs/tutorials/quickstart.md) for approval, cancellation, replay, and
 Artifact examples.
 
+## Execution Control Loop
+
+![One Execution control loop: the caller controls Runtime, Runtime invokes the Provider, observations return as ordered events, and human Actions pause and resume the same run.](assets/execution-control-loop-en.png)
+
+Commands enter through Runtime; Provider-native work never bypasses the portable event and Action
+boundary. SSE replay, human responses, final output, and cancellation all stay correlated to one
+Execution. See the [control-loop explanation](docs/explanations/execution-control-loop.md).
+
 ## Portable Model
 
 - **Conversation:** caller-facing multi-turn identity.
@@ -104,6 +112,14 @@ Artifact examples.
 
 The normative state machine and invariants live in the [runtime model](spec/runtime-model.md), not in
 generated diagrams.
+
+## Portable and Provider-Native Boundary
+
+![Provider SPI maps portable commands into native harness behavior and normalizes provider observations back into portable events.](assets/provider-boundary-en.png)
+
+The portable layer stabilizes lifecycle integration, not model behavior. Native sessions, agent
+loops, model/tool calls, process lifecycle, and opaque provider observations remain behind the
+Provider SPI. See the [provider-boundary explanation](docs/explanations/provider-boundary.md).
 
 ## Artifact Boundary
 
@@ -161,14 +177,23 @@ Package names are workspace identifiers during the MVP and are not yet published
 - [Protocol stack explanation](docs/explanations/protocol-stack.md)
 - [Execution lifecycle](docs/explanations/execution-lifecycle.md)
 - [Capability preflight](docs/explanations/capability-preflight.md)
+- [Execution control loop](docs/explanations/execution-control-loop.md)
+- [Portable and provider-native boundary](docs/explanations/provider-boundary.md)
 - [Artifact descriptors](docs/guides/artifacts.md)
 - [DeepSeek Harness adapter](docs/guides/dsh-provider.md)
+- [Production deployment boundary](docs/guides/production-deployment.md)
 - [Architecture decisions](spec/README.md)
 - [Security policy](SECURITY.md)
 - [Changelog](CHANGELOG.md)
 - [Release process](RELEASING.md)
 
 ## Next Design Areas
+
+![Reference MVP versus production deployment: the portable contract stays stable while production reliability and security capabilities remain deployment-owned.](assets/production-boundary-en.png)
+
+The reference server proves protocol behavior; it is not a production platform. The
+[production deployment guide](docs/guides/production-deployment.md) defines the controls a trusted
+deployment must add without coupling them to the portable contract.
 
 - Durable storage SPI and restart recovery semantics
 - Additional provider adapters and capability-specific conformance profiles

@@ -6,6 +6,13 @@ changes.
 
 ## [Unreleased]
 
+### Documentation
+
+- Added bilingual execution-control, provider-boundary, and production-boundary diagrams.
+- Added focused guides for one complete execution, provider ownership, and production deployment.
+- Reorganized the documentation map around evaluation, integration, provider development, and
+  operations paths.
+
 ## [0.1.0] - 2026-09-02
 
 ### Added

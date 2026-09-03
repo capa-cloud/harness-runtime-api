@@ -1,5 +1,8 @@
 # DeepSeek Harness Provider
 
+Read the [portable and provider-native boundary](../explanations/provider-boundary.md) before mapping
+additional DSH notifications into portable events.
+
 The DSH provider is an optional adapter for the public `@deepseek-ai/dsh-sdk-client` package. It runs
 one DSH subprocess per portable execution and translates DSH notifications into portable events.
 
