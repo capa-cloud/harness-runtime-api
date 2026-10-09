@@ -74,6 +74,58 @@ beforeAll(async () => {
 afterAll(stopServer)
 
 describe('Built reference server over real loopback HTTP', () => {
+  it.each(['-1', '1.5', 'not-a-number', String(Number.MAX_SAFE_INTEGER + 1)])(
+    'rejects invalid cursor %s before opening an SSE stream',
+    async (cursor) => {
+      const response = await fetch(
+        `${baseUrl}/v1/executions/missing/events?after=${encodeURIComponent(cursor)}`,
+        {
+          headers: { accept: 'text/event-stream' },
+        },
+      )
+      expect(response.status).toBe(400)
+      expect(await response.json()).toMatchObject({ code: 'VALIDATION_ERROR' })
+    },
+  )
+
+  it('rejects an invalid action response without resolving approval, then rejects duplicate responses', async () => {
+    const execution = await client.startExecution({
+      conversationId: (await client.createConversation()).id,
+      providerId: 'mock',
+      input: 'synthetic invalid response',
+      config: { requireApproval: true },
+    })
+    try {
+      let actionId: string | undefined
+      for await (const event of client.streamEvents(execution.id, {
+        signal: AbortSignal.timeout(5_000),
+      })) {
+        if (event.type === 'action.required') {
+          actionId = String(event.data.id)
+          break
+        }
+      }
+      if (!actionId) throw new Error('Expected a synthetic approval')
+      const invalid = await fetch(
+        `${baseUrl}/v1/executions/${execution.id}/actions/${actionId}:respond`,
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ approved: 'yes' }),
+        },
+      )
+      expect(invalid.status).toBe(400)
+      expect((await client.getExecution(execution.id)).state).toBe('awaiting_approval')
+      await client.respondAction(execution.id, actionId, { approved: true })
+      expect((await client.waitForTerminal(execution.id)).state).toBe('succeeded')
+      await expect(
+        client.respondAction(execution.id, actionId, { approved: true }),
+      ).rejects.toMatchObject({ status: 409, problem: { code: 'ACTION_ALREADY_RESOLVED' } })
+    } finally {
+      await client.cancelExecution(execution.id)
+    }
+  })
+
   it('supports idempotency, approval, Artifact listing, and replay on the network', async () => {
     expect((await client.describeRuntime()).providers[0]?.id).toBe('mock')
     const request = {

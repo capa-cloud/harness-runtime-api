@@ -32,11 +32,15 @@
     "format:check": "biome format .",
     "lint": "biome lint .",
     "sanitize": "bash scripts/scan-public.sh .",
+    "spec:generate": "pnpm build && node scripts/generate-openapi.mjs",
     "test": "pnpm build && vitest run",
     "test:integration": "pnpm build && vitest run --config vitest.integration.config.ts",
     "typecheck": "tsc -b && tsc -p tsconfig.tests.json --noEmit"
   },
   "devDependencies": {
+    "ajv": "8.20.0",
+    "zod": "4.4.3",
+    "@agentclientprotocol/sdk": "1.7.0",
     "@deepseek-ai/dsh-sdk-client": "0.1.0-rc.7",
     "@biomejs/biome": "2.5.9",
     "@types/node": "22.20.1",
