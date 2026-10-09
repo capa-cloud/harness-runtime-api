@@ -8,7 +8,7 @@
   <strong>English</strong> | <a href="README.zh-CN.md">简体中文</a>
 </p>
 
-> **Experimental:** runtime `0.1.0`, protocol `2026-09-02`. The reference implementation is
+> **Experimental:** runtime `0.2.0`, protocol `2026-09-02`. The reference implementation is
 > in-memory, unauthenticated, and intended for development or one-process embedding.
 
 ![Harness Runtime API architecture: one application contract connects through capability-aware provider adapters to multiple peer harnesses.](assets/harness-runtime-architecture-en.png)

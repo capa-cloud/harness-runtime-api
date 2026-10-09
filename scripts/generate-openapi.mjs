@@ -4,6 +4,9 @@ import { runtimeSchemas } from './openapi-schemas.mjs'
 
 const file = new URL('../spec/openapi.yaml', import.meta.url)
 const document = parse(await readFile(file, 'utf8'))
+document.info.version = JSON.parse(
+  await readFile(new URL('../package.json', import.meta.url), 'utf8'),
+).version
 document.components.schemas = runtimeSchemas()
 document.paths['/v1/conversations'].post.requestBody.content['application/json'].schema = {
   $ref: '#/components/schemas/CreateConversationRequest',

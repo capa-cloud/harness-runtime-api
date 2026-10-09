@@ -40,7 +40,10 @@ beforeAll(async () => {
   const lines = createInterface({ input: server.stdout })
   try {
     baseUrl = await new Promise<string>((resolve, reject) => {
-      const timer = setTimeout(() => reject(new Error('Reference server startup timed out')), 3_000)
+      const timer = setTimeout(
+        () => reject(new Error('Reference server startup timed out')),
+        10_000,
+      )
       const cleanup = () => {
         clearTimeout(timer)
         server.removeListener('exit', failed)

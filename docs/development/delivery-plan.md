@@ -17,10 +17,10 @@ delivery does not claim those features exist in the reference server.
   malformed inputs, rather than only in-process request helpers.
 - [x] Runnable examples cover application integration and provider implementation; a fresh checkout
   can follow documented commands without private services or model credentials.
-- [ ] Protocol, OpenAPI, bilingual README, provider guides, and release materials agree with code.
-- [ ] The final tree, public history, dependency inventory, and publishable artifacts pass privacy
+- [x] Protocol, OpenAPI, bilingual README, provider guides, and release materials agree with code.
+- [x] The final tree, public history, dependency inventory, and publishable artifacts pass privacy
   and security review; findings and exclusions are stated explicitly.
-- [ ] Local checks and the reviewed GitHub commit's CI pass; the worktree is clean and synchronized.
+- [x] Local checks and the reviewed GitHub commit's CI pass; the worktree is clean and synchronized.
 - [ ] The exact release candidate, version, packaging decision, and any required publication
   authorization are recorded before claiming final delivery.
 
@@ -46,13 +46,40 @@ delivery does not claim those features exist in the reference server.
 
 ## Remaining Work
 
-1. Finish documentation/visual consistency review for the complete delivery, including failure
-   while awaiting a human Action.
-2. Finish source/history/media/artifact privacy review and release packaging/version decisions.
-3. Run final local and GitHub checks for the complete delivery, verify fresh-checkout instructions,
-   then prepare the exact candidate required by the release authorization policy.
+1. Record the final merged commit for `v0.2.0` and obtain separate immutable-tag/GitHub prerelease
+   publication approval. Source-only packaging is prepared; npm publication is not part of delivery.
 
 No completion claim has been made for the unchecked acceptance items.
+
+## 0.2.0 Candidate
+
+- [PR 12](https://github.com/capa-cloud/harness-runtime-api/pull/12) prepares runtime/workspace
+  version `0.2.0`, retaining portable protocol `2026-09-02` and adding migration notes.
+- Bilingual lifecycle diagrams now show failure during both human waits. Chrome inspections at
+  original and reading size passed; automated checks cover nine states, twelve transitions, and
+  deterministic regeneration.
+- Source packaging requires a clean commit and an output directory outside the repository,
+  including through symbolic links. Archives exclude Git metadata and include commit-bound
+  metadata and SHA-256 checksums. Packages remain unpublished.
+- Seven added version/diagram/packaging regression tests passed. Candidate
+  `c97c45d` passed [Node 22/24 CI](https://github.com/capa-cloud/harness-runtime-api/actions/runs/37911321061)
+  with 62 unit/contract tests and 35 integration tests per environment.
+- A complete local reachable-history scan found no credentials or private fingerprints; the
+  current-tree audit covered 137 files and metadata of eleven PNGs. Final artifacts are rechecked
+  after the reviewed commit is frozen; scans do not prove an absence of every possible secret.
+- Initial local source/archive reruns exposed overly tight subprocess deadlines and a partial
+  synthetic trace write under load. The tests now run serially with bounded startup allowances;
+  trace writes use atomic replacement. The assertions and production provider defaults are unchanged.
+  The final code revision `c8aa77e` passed both full local and isolated-archive reruns: each had
+  62 unit/contract tests and 35 integration tests, format/lint/type/build checks, and public scanning.
+  The exact revision also passed [Node 22/24 CI](https://github.com/capa-cloud/harness-runtime-api/actions/runs/37912523565).
+  ACP fixture initialization and cleanup allowances are 10 seconds and one second; failure
+  diagnostics are explicit, and production defaults remain unchanged.
+- The final code audit covered 137 files, eleven PNGs, and 29 reachable commits, with zero private
+  fingerprint or credential findings. Source archive and manifest SHA-256 verification passed.
+  Source bundles include the frozen dependency inventory; production dependency auditing reported
+  no known vulnerabilities. Native model quality, operating-system isolation, and production load
+  testing remain outside this credential-free delivery validation.
 
 ## ACP and Schema Verification
 

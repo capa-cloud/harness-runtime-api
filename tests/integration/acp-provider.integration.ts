@@ -32,9 +32,9 @@ async function setup(mode: string, maxMessageBytes?: number, maxPendingPermissio
     command: process.execPath,
     args: [fixture],
     env: { FIXTURE_MODE: mode, FIXTURE_TRACE_PATH: tracePath, FIXTURE_DENIED_TARGET: deniedTarget },
-    initializationTimeoutMs: 1_000,
-    runTimeoutMs: 3_000,
-    shutdownGraceMs: 100,
+    initializationTimeoutMs: 10_000,
+    runTimeoutMs: 10_000,
+    shutdownGraceMs: 1_000,
     ...(maxMessageBytes === undefined ? {} : { maxMessageBytes }),
     ...(maxPendingPermissions === undefined ? {} : { maxPendingPermissions }),
   })
@@ -242,6 +242,7 @@ describe('ACP v1 adapter through the official SDK and owned subprocess', () => {
     const task = await setup('bad-json')
     try {
       await drain(task.runtime, task.execution.id)
+      expect(task.runtime.getExecution(task.execution.id).error).toBeUndefined()
       expect(task.runtime.getExecution(task.execution.id).state).toBe('succeeded')
       expect((await task.trace()).parseErrors).toBe(1)
       expect(diagnostics).not.toHaveBeenCalled()
@@ -256,6 +257,7 @@ describe('ACP v1 adapter through the official SDK and owned subprocess', () => {
     const task = await setup('forbidden-client')
     try {
       await drain(task.runtime, task.execution.id)
+      expect(task.runtime.getExecution(task.execution.id).error).toBeUndefined()
       expect(task.runtime.getExecution(task.execution.id).state).toBe('succeeded')
       expect((await task.trace()).forbiddenErrors).toEqual([-32601, -32601, -32601])
       expect(await task.protectedText()).toBe('synthetic protected text')
@@ -271,9 +273,9 @@ describe('ACP v1 adapter through the official SDK and owned subprocess', () => {
       const report = await runProviderConformance(task.provider, {
         requiredCapabilities: ['action.approval'],
         actionResponse: { approved: true },
-        timeoutMs: 5_000,
+        timeoutMs: 15_000,
       })
-      expect(report.passed).toBe(true)
+      expect(report.passed, JSON.stringify(report)).toBe(true)
     } finally {
       await task.cleanup()
     }

@@ -16,7 +16,7 @@ function providerFor(mode: string) {
       command: process.execPath,
       args: [fixture],
       env: { FIXTURE_MODE: mode },
-      requestTimeoutMs: 1_000,
+      requestTimeoutMs: 5_000,
       shutdownTimeoutMs: 100,
       disposeEofGraceMs: 200,
       disposeGraceMs: 200,
@@ -107,7 +107,7 @@ describe('Pinned public DSH SDK with a real synthetic subprocess', () => {
   })
 
   it('passes the reusable conformance probe through the actual SDK', async () => {
-    const report = await runProviderConformance(providerFor('success'), { timeoutMs: 5_000 })
-    expect(report.passed).toBe(true)
+    const report = await runProviderConformance(providerFor('success'), { timeoutMs: 10_000 })
+    expect(report.passed, JSON.stringify(report)).toBe(true)
   })
 })
