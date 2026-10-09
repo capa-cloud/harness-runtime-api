@@ -12,6 +12,7 @@ import {
   StandardCapability,
 } from '@harness-runtime/protocol'
 import { startProcess, within } from './process.js'
+import { safeStream } from './boundary.js'
 
 export interface AcpProviderOptions {
   command: string
@@ -93,6 +94,11 @@ export class AcpProvider implements HarnessProvider {
     const pendingPermissions = new Set<Promise<acp.RequestPermissionResponse>>()
     const output: string[] = []
     let cancellation: Promise<void> | undefined
+    let rejectViolation: () => void = () => undefined
+    const violation = new Promise<never>((_resolve, reject) => {
+      rejectViolation = () => reject(new Error('ACP peer violated the adapter boundary'))
+    })
+    void violation.catch(() => undefined)
     const cancel = (): Promise<void> => {
       cancellation ??= (async () => {
         try {
@@ -126,15 +132,20 @@ export class AcpProvider implements HarnessProvider {
         .client({ name: 'harness-runtime-api' })
         .onNotification(acp.methods.client.session.update, ({ params }) => {
           if (!sessionId || params.sessionId !== sessionId) {
-            throw new Error('ACP agent reported an unrelated session')
+            rejectViolation()
+            return
           }
-          nativeEvent(context, 'session/update', params)
-          if (
-            params.update.sessionUpdate === 'agent_message_chunk' &&
-            params.update.content.type === 'text'
-          ) {
-            output.push(params.update.content.text)
-            context.emit('output.text.delta', { text: params.update.content.text })
+          try {
+            nativeEvent(context, 'session/update', params)
+            if (
+              params.update.sessionUpdate === 'agent_message_chunk' &&
+              params.update.content.type === 'text'
+            ) {
+              output.push(params.update.content.text)
+              context.emit('output.text.delta', { text: params.update.content.text })
+            }
+          } catch {
+            rejectViolation()
           }
         })
         .onRequest(acp.methods.client.session.requestPermission, ({ params }) => {
@@ -172,44 +183,50 @@ export class AcpProvider implements HarnessProvider {
           return permission
         })
       connection = app.connect(
-        acp.ndJsonStream(
-          Writable.toWeb(owned.child.stdin),
-          Readable.toWeb(owned.child.stdout) as ReadableStream<Uint8Array>,
-          { maxMessageBytes: this.options.maxMessageBytes },
+        safeStream(
+          acp.ndJsonStream(
+            Writable.toWeb(owned.child.stdin),
+            Readable.toWeb(owned.child.stdout) as ReadableStream<Uint8Array>,
+            { maxMessageBytes: this.options.maxMessageBytes },
+          ),
+          rejectViolation,
         ),
       )
       const agent = connection.agent
       return await within(
-        (async () => {
-          const initialized = await within(
-            agent.request(acp.methods.agent.initialize, {
-              protocolVersion: acp.PROTOCOL_VERSION,
-              clientCapabilities: {
-                fs: { readTextFile: false, writeTextFile: false },
-                terminal: false,
-              },
-            }),
-            this.options.initializationTimeoutMs,
-            'ACP initialization timed out',
-          )
-          if (initialized.protocolVersion !== acp.PROTOCOL_VERSION)
-            throw new Error('ACP protocol version mismatch')
-          context.signal.throwIfAborted()
-          sessionId = (
-            await agent.request(acp.methods.agent.session.new, {
-              cwd: this.options.cwd,
-              mcpServers: [],
+        Promise.race([
+          (async () => {
+            const initialized = await within(
+              agent.request(acp.methods.agent.initialize, {
+                protocolVersion: acp.PROTOCOL_VERSION,
+                clientCapabilities: {
+                  fs: { readTextFile: false, writeTextFile: false },
+                  terminal: false,
+                },
+              }),
+              this.options.initializationTimeoutMs,
+              'ACP initialization timed out',
+            )
+            if (initialized.protocolVersion !== acp.PROTOCOL_VERSION)
+              throw new Error('ACP protocol version mismatch')
+            context.signal.throwIfAborted()
+            sessionId = (
+              await agent.request(acp.methods.agent.session.new, {
+                cwd: this.options.cwd,
+                mcpServers: [],
+              })
+            ).sessionId
+            context.signal.throwIfAborted()
+            const result = await agent.request(acp.methods.agent.session.prompt, {
+              sessionId,
+              prompt: [{ type: 'text', text: context.input }],
             })
-          ).sessionId
-          context.signal.throwIfAborted()
-          const result = await agent.request(acp.methods.agent.session.prompt, {
-            sessionId,
-            prompt: [{ type: 'text', text: context.input }],
-          })
-          if (result.stopReason === 'cancelled') throw new Error('ACP native turn was cancelled')
-          nativeEvent(context, 'turn.completed', { stopReason: result.stopReason })
-          return { finalOutput: output.join('') }
-        })(),
+            if (result.stopReason === 'cancelled') throw new Error('ACP native turn was cancelled')
+            nativeEvent(context, 'turn.completed', { stopReason: result.stopReason })
+            return { finalOutput: output.join('') }
+          })(),
+          violation,
+        ]),
         this.options.runTimeoutMs,
         'ACP execution timed out',
       )

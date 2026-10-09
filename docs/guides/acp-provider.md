@@ -63,6 +63,9 @@ portable permission store.
 
 The adapter rejects unrelated-session updates, bounds inbound message size and run duration,
 discards stderr, and returns generic request errors instead of forwarding native diagnostics.
+Incoming envelopes and registered notification parameters are checked against the SDK's public
+JSON Schema before routing, so malformed messages cannot reach its raw diagnostic logger. JSON
+syntax errors retain the SDK's parse-error reply/recovery behavior and are not logged with raw input.
 Native updates may still contain sensitive tool or file information; restrict access and redact
 before exporting those events. These protections do not isolate the native process's filesystem,
 network, subprocesses, or descendants. Use a deployment-owned sandbox and least-privilege account.

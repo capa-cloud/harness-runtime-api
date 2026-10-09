@@ -71,6 +71,9 @@ importers:
       '@harness-runtime/protocol':
         specifier: workspace:*
         version: link:../protocol
+      ajv:
+        specifier: 8.20.0
+        version: 8.20.0
 
   packages/provider-dsh:
     dependencies:

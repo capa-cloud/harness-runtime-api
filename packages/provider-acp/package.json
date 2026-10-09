@@ -21,6 +21,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "ajv": "8.20.0",
     "@agentclientprotocol/sdk": "1.7.0",
     "@harness-runtime/core": "workspace:*",
     "@harness-runtime/protocol": "workspace:*"

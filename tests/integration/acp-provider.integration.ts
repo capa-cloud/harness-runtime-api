@@ -20,6 +20,7 @@ interface Trace {
   permissions: Array<{ outcome: string; optionId?: string }>
   forbiddenErrors: number[]
   exited: boolean
+  parseErrors: number
 }
 
 async function setup(mode: string, maxMessageBytes?: number) {
@@ -200,9 +201,10 @@ describe('ACP v1 adapter through the official SDK and owned subprocess', () => {
     },
   )
 
-  it.each(['bad-version', 'crash', 'foreign-session', 'oversized'])(
+  it.each(['bad-version', 'crash', 'foreign-session', 'oversized', 'bad-envelope', 'bad-params'])(
     'fails %s without leaking diagnostics',
     async (mode) => {
+      const diagnostics = vi.spyOn(console, 'error')
       const task = await setup(mode, mode === 'oversized' ? 1_024 : undefined)
       try {
         await drain(task.runtime, task.execution.id)
@@ -216,11 +218,28 @@ describe('ACP v1 adapter through the official SDK and owned subprocess', () => {
             .events.some((event) => event.data.text === 'foreign data'),
         ).toBe(false)
         assertExited(await task.trace())
+        expect(diagnostics).not.toHaveBeenCalled()
       } finally {
+        diagnostics.mockRestore()
         await task.cleanup()
       }
     },
   )
+
+  it('uses the SDK parse-error recovery without logging malformed raw input', async () => {
+    const diagnostics = vi.spyOn(console, 'error')
+    const task = await setup('bad-json')
+    try {
+      await drain(task.runtime, task.execution.id)
+      expect(task.runtime.getExecution(task.execution.id).state).toBe('succeeded')
+      expect((await task.trace()).parseErrors).toBe(1)
+      expect(diagnostics).not.toHaveBeenCalled()
+      assertExited(await task.trace())
+    } finally {
+      diagnostics.mockRestore()
+      await task.cleanup()
+    }
+  })
 
   it('denies unadvertised filesystem and terminal requests without modifying files', async () => {
     const task = await setup('forbidden-client')

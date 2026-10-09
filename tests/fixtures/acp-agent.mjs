@@ -1,6 +1,7 @@
 import { writeFileSync } from 'node:fs'
 import { isAbsolute } from 'node:path'
 import { Readable, Writable } from 'node:stream'
+import { createInterface } from 'node:readline'
 import * as acp from '@agentclientprotocol/sdk'
 
 const mode = process.env.FIXTURE_MODE ?? 'success'
@@ -14,12 +15,24 @@ const state = {
   permissions: [],
   forbiddenErrors: [],
   exited: false,
+  parseErrors: 0,
 }
 const record = () => {
   if (process.env.FIXTURE_TRACE_PATH)
     writeFileSync(process.env.FIXTURE_TRACE_PATH, JSON.stringify(state))
 }
 record()
+const inputObserver = createInterface({ input: process.stdin })
+inputObserver.on('line', (line) => {
+  try {
+    if (JSON.parse(line).error?.code === -32700) {
+      state.parseErrors += 1
+      record()
+    }
+  } catch {
+    /* Observe only protocol parse-error replies, not prompt contents. */
+  }
+})
 process.on('exit', () => {
   state.exited = true
   record()
@@ -60,6 +73,18 @@ const app = acp
         update: { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text } },
       })
     await update('')
+    if (mode === 'bad-envelope')
+      process.stdout.write(`${JSON.stringify({ invalid: 'synthetic-boundary-canary' })}\n`)
+    if (mode === 'bad-json') process.stdout.write('{synthetic-boundary-canary\n')
+    if (mode === 'bad-params') {
+      await client.notify(acp.methods.client.session.update, {
+        sessionId: params.sessionId,
+        update: {
+          sessionUpdate: 'agent_message_chunk',
+          content: { type: 'text', text: { canary: 'synthetic-boundary-canary' } },
+        },
+      })
+    }
     if (mode === 'hang' || mode === 'stubborn') {
       return new Promise((resolve) => {
         pendingPrompt = resolve
