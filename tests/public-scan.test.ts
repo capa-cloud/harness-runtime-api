@@ -4,12 +4,15 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-async function scanFixture(files: Record<string, string>) {
+async function scanFixture(files: Record<string, string>, forceGrep = false) {
   const directory = await mkdtemp(join(tmpdir(), 'harness-public-scan-'))
   try {
     for (const [name, content] of Object.entries(files))
       await writeFile(join(directory, name), content)
-    const result = spawnSync('bash', ['scripts/scan-public.sh', directory], { encoding: 'utf8' })
+    const result = spawnSync('bash', ['scripts/scan-public.sh', directory], {
+      encoding: 'utf8',
+      env: { ...process.env, PUBLIC_SCAN_FORCE_GREP: forceGrep ? '1' : '0' },
+    })
     return { status: result.status, output: result.stdout }
   } finally {
     await rm(directory, { recursive: true, force: true })
@@ -34,5 +37,13 @@ describe('public-content scanner', () => {
     expect(result.status).toBe(1)
     expect(result.output).toContain('dangerous files found')
     expect(result.output).toContain('credential token prefix')
+  })
+
+  it('blocks generated credentials using the grep fallback without printing their content', async () => {
+    const generatedValue = ['ghp_', 'x'.repeat(36)].join('')
+    const result = await scanFixture({ 'README.md': generatedValue }, true)
+    expect(result.status).toBe(1)
+    expect(result.output).toContain('credential token prefix')
+    expect(result.output).not.toContain(generatedValue)
   })
 })

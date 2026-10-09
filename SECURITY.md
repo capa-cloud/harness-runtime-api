@@ -27,3 +27,6 @@ reporting portable success while a human Action remains unresolved.
 Provider-native events and errors can contain prompt, tool, file, and process output. Deployments
 must restrict access to them and apply their own redaction policy before logging or exporting them.
 The reference implementation does not write execution transcripts to disk or log request bodies.
+
+`pnpm sanitize` uses ripgrep when available and a grep fallback otherwise. Scanner/tool errors fail
+the check. Matches list file names only; suspected credential values are never printed by the scanner.

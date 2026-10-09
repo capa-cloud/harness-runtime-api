@@ -22,9 +22,35 @@ scan() {
   local label="$1"
   local pattern="$2"
   local output
-  output=$(rg -n -i --hidden \
-    --glob '!.git/**' --glob '!node_modules/**' --glob '!dist/**' --glob '!pnpm-lock.yaml' \
-    "$pattern" "$root" || true)
+  local scan_status=0
+  if command -v rg >/dev/null && [[ "${PUBLIC_SCAN_FORCE_GREP:-0}" != 1 ]]; then
+    output=$(rg -l -i --hidden \
+      --glob '!.git/**' --glob '!**/node_modules/**' --glob '!**/dist/**' --glob '!pnpm-lock.yaml' \
+      "$pattern" "$root") || scan_status=$?
+    if [[ "$scan_status" -gt 1 ]]; then
+      printf 'scan failed: %s\n' "$label"
+      status=1
+      return
+    fi
+  elif command -v grep >/dev/null; then
+    output=$(find "$root" \
+      -path '*/.git' -prune -o -path '*/node_modules' -prune -o -path '*/dist' -prune -o \
+      -type f ! -name pnpm-lock.yaml -exec bash -c '
+        grep -l -i -E -I -- "$1" "${@:2}"
+        result=$?
+        if [[ "$result" -gt 1 ]]; then exit "$result"; fi
+        exit 0
+      ' _ "$pattern" {} +) || scan_status=$?
+    if [[ "$scan_status" -ne 0 ]]; then
+      printf 'scan failed: %s\n' "$label"
+      status=1
+      return
+    fi
+  else
+    printf 'scanner unavailable: install ripgrep or grep\n'
+    status=1
+    return
+  fi
   if [[ -n "$output" ]]; then
     printf '%s:\n%s\n' "$label" "$output"
     status=1
