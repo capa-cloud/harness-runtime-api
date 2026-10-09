@@ -1,6 +1,6 @@
 # DeepSeek Harness Provider
 
-Optional subprocess adapter for `@deepseek-ai/dsh-sdk-client` `0.1.0-rc.7` or a compatible release.
+Optional subprocess adapter for exactly `@deepseek-ai/dsh-sdk-client` `0.1.0-rc.7`.
 
 The dependency is loaded only when the provider starts an execution. Unit tests use an injected
 structural client and never invoke a model or require a credential.

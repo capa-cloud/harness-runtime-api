@@ -17,7 +17,7 @@ delivery does not claim those features exist in the reference server.
   malformed inputs, rather than only in-process request helpers.
 - [x] Runnable examples cover application integration and provider implementation; a fresh checkout
   can follow documented commands without private services or model credentials.
-- [ ] Protocol, OpenAPI, bilingual README, provider guides, and release materials agree with code.
+- [x] Protocol, OpenAPI, bilingual README, provider guides, and release materials agree with code.
 - [ ] The final tree, public history, dependency inventory, and publishable artifacts pass privacy
   and security review; findings and exclusions are stated explicitly.
 - [ ] Local checks and the reviewed GitHub commit's CI pass; the worktree is clean and synchronized.
@@ -46,13 +46,32 @@ delivery does not claim those features exist in the reference server.
 
 ## Remaining Work
 
-1. Finish documentation/visual consistency review for the complete delivery, including failure
-   while awaiting a human Action.
-2. Finish source/history/media/artifact privacy review and release packaging/version decisions.
-3. Run final local and GitHub checks for the complete delivery, verify fresh-checkout instructions,
-   then prepare the exact candidate required by the release authorization policy.
+1. Complete final local and isolated source-archive checks after the subprocess test stability fix.
+2. Reconcile final history/artifact audit evidence with the reviewed delivery commit.
+3. Record the exact release tag and commit for separate publication approval.
 
 No completion claim has been made for the unchecked acceptance items.
+
+## 0.2.0 Candidate
+
+- [PR 12](https://github.com/capa-cloud/harness-runtime-api/pull/12) prepares runtime/workspace
+  version `0.2.0`, retaining portable protocol `2026-09-02` and adding migration notes.
+- Bilingual lifecycle diagrams now show failure during both human waits. Chrome inspections at
+  original and reading size passed; automated checks cover nine states, twelve transitions, and
+  deterministic regeneration.
+- Source packaging requires a clean commit and an output directory outside the repository,
+  including through symbolic links. Archives exclude Git metadata and include commit-bound
+  metadata and SHA-256 checksums. Packages remain unpublished.
+- Seven added version/diagram/packaging regression tests passed. Candidate
+  `c97c45d` passed [Node 22/24 CI](https://github.com/capa-cloud/harness-runtime-api/actions/runs/37911321061)
+  with 62 unit/contract tests and 35 integration tests per environment.
+- A complete local reachable-history scan found no credentials or private fingerprints; the
+  current-tree audit covered 137 files and metadata of eleven PNGs. Final artifacts are rechecked
+  after the reviewed commit is frozen; scans do not prove an absence of every possible secret.
+- Initial local source/archive reruns exposed overly tight subprocess deadlines and a partial
+  synthetic trace write under load. The tests now run serially with bounded startup allowances;
+  trace writes use atomic replacement. The assertions and production provider defaults are unchanged.
+  Full local and isolated-archive reruns remain required before final delivery is claimed.
 
 ## ACP and Schema Verification
 
