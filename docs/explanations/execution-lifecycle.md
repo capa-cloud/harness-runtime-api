@@ -16,6 +16,10 @@ Exactly one of three terminal outcomes is retained:
 - `failed` after an unrecovered provider error;
 - `cancelled` after cancellation finalization.
 
+Provider errors may occur in `running`, `awaiting_input`, or `awaiting_approval`. All three can
+transition directly to `failed`; pending Actions are rejected rather than left orphaned. Returning
+final output with an unresolved Action is also a failure, not a successful execution.
+
 A cancellation request is accepted from any non-terminal state. Runtime moves through `cancelling`,
 aborts the provider context, rejects pending actions, invokes optional provider cleanup, and appends
 one `run.cancelled` terminal event. Terminal executions never return to active states.

@@ -49,7 +49,7 @@ export class AcpProvider implements HarnessProvider {
     this.manifest = ProviderManifestSchema.parse({
       id: this.options.id,
       name: 'ACP v1 Agent Adapter',
-      version: '0.1.0',
+      version: '0.2.0',
       protocolVersion: PROTOCOL_VERSION,
       topologies: ['subprocess'],
       capabilities: {

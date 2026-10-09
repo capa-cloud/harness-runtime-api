@@ -74,7 +74,7 @@ export class InMemoryHarnessRuntime {
 
   constructor(providers: HarnessProvider[] = [], options: InMemoryRuntimeOptions = {}) {
     this.name = options.name ?? 'harness-runtime-reference'
-    this.version = options.version ?? '0.1.0'
+    this.version = options.version ?? '0.2.0'
     for (const provider of providers) this.registerProvider(provider)
   }
 

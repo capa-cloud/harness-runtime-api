@@ -8,7 +8,7 @@ import {
 const manifest: ProviderManifest = {
   id: 'mock',
   name: 'Deterministic Mock Provider',
-  version: '0.1.0',
+  version: '0.2.0',
   protocolVersion: PROTOCOL_VERSION,
   topologies: ['embedded'],
   capabilities: {

@@ -29,6 +29,17 @@ pnpm audit --prod --audit-level high
 
 ## GitHub Release
 
+The first experimental release uses a source-only archive; it does not bundle dependencies,
+credentials, local logs, or prebuilt binaries. From a clean reviewed commit, run:
+
+```bash
+node scripts/package-release.mjs /tmp/harness-runtime-release
+```
+
+The output contains a Git archive, `release-manifest.json` bound to the exact commit, and
+`SHA256SUMS`. Verify the archive in an isolated checkout using the frozen lockfile and documented
+checks. Publish as a prerelease while the adapters and reference implementation are experimental.
+
 After the exact tag and commit SHA are approved:
 
 1. create an annotated `vX.Y.Z` tag at the reviewed commit;

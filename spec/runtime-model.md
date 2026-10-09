@@ -55,11 +55,16 @@ queued -> starting -> running
                        |-> succeeded
                        |-> failed
 any non-terminal state -> cancelling -> cancelled
+running or awaiting_* -> failed on provider failure
 ```
 
 Terminal states are `succeeded`, `failed`, and `cancelled`. A terminal execution never returns to a
 non-terminal state. Cancellation can begin from any non-terminal state; the provider-specific cancel
 hook and abort signal determine how native work is stopped.
+
+Provider failures can also terminate an execution while it awaits input or approval. Returning
+success with an unresolved Action is a provider failure; abandoned Action promises are settled.
+Once cancellation begins, its cleanup path owns the terminal cancellation outcome.
 
 ## Authority
 

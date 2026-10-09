@@ -6,6 +6,10 @@ changes.
 
 ## [Unreleased]
 
+No unreleased changes.
+
+## [0.2.0] - 2026-10-09
+
 ### Added
 
 - ACP v1 subprocess Provider through the official SDK, with correlated human permissions,
@@ -44,6 +48,18 @@ changes.
 - Added focused guides for one complete execution, provider ownership, and production deployment.
 - Reorganized the documentation map around evaluation, integration, provider development, and
   operations paths.
+- Corrected both lifecycle diagrams to include failure while awaiting input or approval, with a
+  deterministic generator and release-version consistency tests.
+
+### Migration From 0.1.0
+
+- DSH launch options must be set by the trusted Provider constructor; per-execution launch
+  overrides are rejected. Install exactly `@deepseek-ai/dsh-sdk-client@0.1.0-rc.7` and explicitly
+  declare only extensions verified in your deployment.
+- Catch `HarnessRuntimeStreamInterruptedError` when an SSE stream ends before the execution is
+  terminal. Reconnect using the event cursor or query execution state before retrying work.
+- The portable protocol remains `2026-09-02`. Reference storage remains in-memory; ACP is
+  experimental, and workspace packages are not published to npm.
 
 ## [0.1.0] - 2026-09-02
 
