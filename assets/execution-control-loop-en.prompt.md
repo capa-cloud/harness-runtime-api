@@ -1,11 +1,9 @@
 # Execution Control Loop (English)
 
-- Date: 2026-09-03
-- Producer: AnyCap
-- Model: GPT Image 2
-- Mode: image-to-image text repair after a two-model comparison
-- Output: `assets/execution-control-loop-en.png`
-- Assurance class: T1 validated explanation
+- Date: 2026-10-09
+- Producer: deterministic SVG after rejected AnyCap candidates
+- Output: `assets/execution-control-loop-en.svg`
+- Assurance class: T0 exact diagram
 
 ## Fact Graph
 
@@ -18,9 +16,16 @@
 
 ## Validation
 
-- File: PNG, 2048 x 1152
-- Candidate comparison: Nano Banana 2 rejected for reversed Action response
-- Final repair: changed one duplicate `Action Required` label to `Action Response`
-- Direct inspection: passed
-- AnyCap image-read: passed all text, node, and edge-direction checks
-- Sensitive information review: passed
+- File: SVG, 2048 x 1152; labels and all eight connectors are editable source.
+- The former PNG was retired after review found a double-headed Action response. The earlier
+  direct-inspection and image-read PASS records did not establish correct topology.
+- Two fresh AnyCap GPT Image 2 candidates used the same node and edge inventory. Candidate A
+  incorrectly emitted the terminal event from Provider; candidate B joined the Provider into the
+  terminal path and invented a sequence between Runtime responsibilities. Both were rejected.
+- The replacement uses only destination arrowheads. Action response is Caller to Runtime;
+  the terminal-event path originates only at Runtime.
+- Chrome rendering: inspected at original 2048 x 1152 and consumer 1024 x 576; no clipping,
+  overlap, invented connections, or illegible labels.
+- AnyCap image-read: PASS; independently enumerated the eight directed edges and single
+  destination arrowheads, including Runtime as the sole terminal-event origin.
+- Source edge checks and public-content review: passed.

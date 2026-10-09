@@ -10,6 +10,7 @@ import {
   ProblemSchema,
   RuntimeDescriptionSchema,
   RuntimeEventSchema,
+  isTerminalExecutionState,
   type StartExecutionRequest,
   type RuntimeEvent,
 } from '@harness-runtime/protocol'
@@ -30,6 +31,18 @@ export class HarnessRuntimeHttpError extends Error {
     this.name = 'HarnessRuntimeHttpError'
     this.status = status
     this.problem = problem
+  }
+}
+
+export class HarnessRuntimeStreamInterruptedError extends Error {
+  readonly execution: Execution
+
+  constructor(execution: Execution) {
+    super(
+      `Event stream ended before execution ${execution.id} became terminal (${execution.state})`,
+    )
+    this.name = 'HarnessRuntimeStreamInterruptedError'
+    this.execution = execution
   }
 }
 
@@ -66,8 +79,12 @@ export class HarnessRuntimeClient {
     })
   }
 
-  getExecution(id: string) {
-    return this.request(`/v1/executions/${encodeURIComponent(id)}`, ExecutionSchema)
+  getExecution(id: string, signal?: AbortSignal) {
+    return this.request(
+      `/v1/executions/${encodeURIComponent(id)}`,
+      ExecutionSchema,
+      signal === undefined ? {} : { signal },
+    )
   }
 
   listArtifacts(id: string) {
@@ -139,11 +156,18 @@ export class HarnessRuntimeClient {
   }
 
   async waitForTerminal(id: string, signal?: AbortSignal): Promise<Execution> {
+    signal?.throwIfAborted()
     const options = signal === undefined ? {} : { signal }
-    for await (const _event of this.streamEvents(id, options)) {
-      // The server closes the stream after the terminal event.
+    for await (const event of this.streamEvents(id, options)) {
+      if (['run.completed', 'run.failed', 'run.cancelled'].includes(event.type)) break
     }
-    return this.getExecution(id)
+    signal?.throwIfAborted()
+    const execution = await this.getExecution(id, signal)
+    signal?.throwIfAborted()
+    if (!isTerminalExecutionState(execution.state)) {
+      throw new HarnessRuntimeStreamInterruptedError(execution)
+    }
+    return execution
   }
 
   private async request<T>(path: string, schema: z.ZodType<T>, init: RequestInit = {}): Promise<T> {

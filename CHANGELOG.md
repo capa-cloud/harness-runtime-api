@@ -6,8 +6,21 @@ changes.
 
 ## [Unreleased]
 
+### Fixed
+
+- SDK terminal waits now confirm execution state after SSE EOF and report interrupted active runs
+  with `HarnessRuntimeStreamInterruptedError`.
+- SDK terminal events end observation without waiting for the connection to close; abort signals
+  also cover the final execution read.
+- Conformance probe failures now abort subscriptions and request bounded provider cleanup, with
+  cleanup errors and timeouts included in the report.
+- Updated Hono to 4.13.7 to clear four production dependency advisories, including
+  [GHSA-hxh3-vqpv-xpqv](https://github.com/honojs/hono/security/advisories/GHSA-hxh3-vqpv-xpqv).
+
 ### Documentation
 
+- Replaced the English control-loop raster with an exact SVG after correcting Action response
+  direction and retiring inaccurate image validation records.
 - Added bilingual execution-control, provider-boundary, and production-boundary diagrams.
 - Added focused guides for one complete execution, provider ownership, and production deployment.
 - Reorganized the documentation map around evaluation, integration, provider development, and

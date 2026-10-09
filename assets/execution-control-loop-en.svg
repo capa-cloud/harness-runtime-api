@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2048" height="1152" viewBox="0 0 2048 1152" role="img" aria-labelledby="title desc">
+  <title id="title">One Execution, One Control Loop</title>
+  <desc id="desc">Caller commands and Action responses enter Runtime. Runtime invokes Provider work, orders observations, returns SSE and Action requests to Caller, and owns the terminal event. The native agent loop belongs to Provider.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0 0 L10 5 L0 10 Z" fill="#27313b"/>
+    </marker>
+    <marker id="action-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0 0 L10 5 L0 10 Z" fill="#b66b00"/>
+    </marker>
+    <style>
+      text { font-family: Inter, system-ui, sans-serif; fill: #20242b; text-anchor: middle; }
+      .heading { font-size: 54px; font-weight: 700; }
+      .name { font-size: 38px; font-weight: 650; }
+      .label { font-size: 30px; font-weight: 500; }
+      .box { fill: #fff; stroke: #59616d; stroke-width: 3; rx: 12; }
+      .runtime { stroke: #1473e6; }
+      .terminal { stroke: #2e7d32; }
+      .edge { fill: none; stroke: #27313b; stroke-width: 4; marker-end: url(#arrow); }
+      .action { stroke: #b66b00; marker-end: url(#action-arrow); }
+    </style>
+  </defs>
+  <rect width="2048" height="1152" fill="#fff"/>
+  <text x="1024" y="86" class="heading">One Execution, One Control Loop</text>
+  <rect x="64" y="200" width="320" height="630" class="box"/>
+  <text x="224" y="525" class="name">Caller</text>
+  <rect x="800" y="200" width="448" height="630" class="box runtime"/>
+  <text x="1024" y="270" class="name">Harness Runtime API</text>
+  <rect x="848" y="326" width="352" height="114" class="box"/>
+  <text x="1024" y="394" class="label">Start + Preflight</text>
+  <rect x="848" y="486" width="352" height="114" class="box"/>
+  <text x="1024" y="554" class="label">Ordered Events</text>
+  <rect x="848" y="646" width="352" height="114" class="box"/>
+  <text x="1024" y="714" class="label">Action Correlation</text>
+  <rect x="1632" y="200" width="352" height="630" class="box"/>
+  <text x="1808" y="270" class="name">Harness Provider</text>
+  <rect x="1668" y="370" width="280" height="260" class="box"/>
+  <text x="1808" y="490" class="label">Native Agent</text>
+  <text x="1808" y="534" class="label">Loop</text>
+  <rect x="1632" y="962" width="352" height="112" class="box terminal"/>
+  <text x="1808" y="1032" class="name">Terminal Outcome</text>
+  <path id="commands" d="M384 326 H800" class="edge"/>
+  <text x="592" y="304" class="label">Create / Start / Cancel</text>
+  <path id="sse" d="M800 486 H384" class="edge"/>
+  <text x="592" y="464" class="label">SSE Replay</text>
+  <path id="action-required" d="M800 626 H384" class="edge action"/>
+  <text x="592" y="604" class="label">Action Required</text>
+  <path id="action-response" d="M384 746 H800" class="edge action"/>
+  <text x="592" y="724" class="label">Action Response</text>
+  <path id="run" d="M1248 326 H1632" class="edge"/>
+  <text x="1440" y="304" class="label">Run</text>
+  <path id="deltas" d="M1632 486 H1248" class="edge"/>
+  <text x="1440" y="464" class="label">Deltas + Events</text>
+  <path id="final-output" d="M1632 706 H1248" class="edge"/>
+  <text x="1440" y="684" class="label">Final Output</text>
+  <path id="terminal-event" d="M1024 830 V1018 H1632" class="edge"/>
+  <text x="1336" y="994" class="label">One Terminal Event</text>
+</svg>

@@ -93,7 +93,7 @@ Artifact examples.
 
 ## Execution Control Loop
 
-![One Execution control loop: the caller controls Runtime, Runtime invokes the Provider, observations return as ordered events, and human Actions pause and resume the same run.](assets/execution-control-loop-en.png)
+![One Execution control loop: the caller controls Runtime, Runtime invokes the Provider, observations return as ordered events, and human Actions pause and resume the same run.](assets/execution-control-loop-en.svg)
 
 Commands enter through Runtime; Provider-native work never bypasses the portable event and Action
 boundary. SSE replay, human responses, final output, and cancellation all stay correlated to one

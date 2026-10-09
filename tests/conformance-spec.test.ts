@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+import type { HarnessProvider, ProviderRunContext } from '../packages/core/src/index.js'
 import { parse } from 'yaml'
 import { runProviderConformance } from '../packages/conformance/src/index.js'
 import { PROTOCOL_VERSION } from '../packages/protocol/src/index.js'
@@ -10,6 +11,82 @@ describe('conformance and published specification', () => {
     const report = await runProviderConformance(new MockProvider())
     expect(report.passed).toBe(true)
     expect(report.checks.every((check) => check.passed)).toBe(true)
+  })
+
+  it('aborts the subscription and cancels provider work after a probe timeout', async () => {
+    let context: ProviderRunContext | undefined
+    const cancel = vi.fn(async () => undefined)
+    const provider: HarnessProvider = {
+      manifest: new MockProvider().manifest,
+      run: (input) => {
+        context = input
+        return new Promise((_, reject) => {
+          input.signal.addEventListener('abort', () => reject(new Error('aborted')), { once: true })
+        })
+      },
+      cancel,
+    }
+    const report = await runProviderConformance(provider, { timeoutMs: 20 })
+    expect(report.passed).toBe(false)
+    expect(report.checks).toContainEqual({
+      name: 'execution-probe',
+      passed: false,
+      detail: 'Conformance probe timed out',
+    })
+    expect(context?.signal.aborted).toBe(true)
+    expect(cancel).toHaveBeenCalledTimes(1)
+    expect(report.checks).toContainEqual({ name: 'execution-cleanup', passed: true })
+  })
+
+  it('reports provider cleanup failures alongside the probe timeout', async () => {
+    const provider: HarnessProvider = {
+      manifest: new MockProvider().manifest,
+      run: (context) =>
+        new Promise((_, reject) => {
+          context.signal.addEventListener('abort', () => reject(new Error('aborted')), {
+            once: true,
+          })
+        }),
+      cancel: async () => {
+        throw new Error('cleanup rejected')
+      },
+    }
+    const report = await runProviderConformance(provider, { timeoutMs: 20 })
+    expect(report.passed).toBe(false)
+    expect(report.checks).toContainEqual({
+      name: 'execution-cleanup',
+      passed: false,
+      detail: 'cleanup rejected',
+    })
+  })
+
+  it('bounds cleanup when a provider cancel hook does not settle', async () => {
+    let releaseCleanup: (() => void) | undefined
+    const provider: HarnessProvider = {
+      manifest: new MockProvider().manifest,
+      run: (context) =>
+        new Promise((_, reject) => {
+          context.signal.addEventListener('abort', () => reject(new Error('aborted')), {
+            once: true,
+          })
+        }),
+      cancel: () =>
+        new Promise((resolve) => {
+          releaseCleanup = resolve
+        }),
+    }
+    try {
+      const report = await runProviderConformance(provider, { timeoutMs: 20, cleanupTimeoutMs: 20 })
+      expect(report.passed).toBe(false)
+      expect(report.checks).toContainEqual({
+        name: 'execution-cleanup',
+        passed: false,
+        detail: 'Conformance cleanup timed out',
+      })
+    } finally {
+      releaseCleanup?.()
+      await new Promise((resolve) => setImmediate(resolve))
+    }
   })
 
   it('ships a parseable OpenAPI 3.1 document with all MVP operations', async () => {

@@ -4,6 +4,7 @@ import { MockProvider } from '../packages/provider-mock/src/index.js'
 import {
   HarnessRuntimeClient,
   HarnessRuntimeHttpError,
+  HarnessRuntimeStreamInterruptedError,
 } from '../packages/sdk-typescript/src/index.js'
 import { createApp } from '../packages/server/src/index.js'
 
@@ -135,6 +136,111 @@ describe('HTTP API and TypeScript SDK', () => {
     for await (const _event of client.streamEvents('exec_example')) break
 
     expect(cancel).toHaveBeenCalledTimes(1)
+  })
+
+  it('rejects premature SSE EOF when the execution is still awaiting approval', async () => {
+    const runtime = new InMemoryHarnessRuntime([new MockProvider()])
+    const app = createApp(runtime)
+    const client = new HarnessRuntimeClient({
+      baseUrl: 'http://runtime.test',
+      fetch: async (input, init) =>
+        new Headers(init?.headers).get('accept') === 'text/event-stream'
+          ? new Response('', { headers: { 'content-type': 'text/event-stream' } })
+          : app.request(input, init),
+    })
+    const conversation = await client.createConversation()
+    const execution = await client.startExecution({
+      conversationId: conversation.id,
+      providerId: 'mock',
+      input: 'interrupted approval',
+      config: { requireApproval: true },
+    })
+    try {
+      await expect(client.waitForTerminal(execution.id)).rejects.toMatchObject({
+        name: 'HarnessRuntimeStreamInterruptedError',
+        execution: { id: execution.id, state: 'awaiting_approval' },
+      })
+      await expect(client.waitForTerminal(execution.id)).rejects.toBeInstanceOf(
+        HarnessRuntimeStreamInterruptedError,
+      )
+    } finally {
+      await runtime.cancelExecution(execution.id)
+    }
+  })
+
+  it('accepts EOF without replayed events when the execution is already terminal', async () => {
+    const runtime = new InMemoryHarnessRuntime([new MockProvider()])
+    const execution = runtime.startExecution({
+      conversationId: runtime.createConversation().id,
+      providerId: 'mock',
+      input: 'already terminal',
+    })
+    await runtime.cancelExecution(execution.id)
+    const app = createApp(runtime)
+    const client = new HarnessRuntimeClient({
+      baseUrl: 'http://runtime.test',
+      fetch: async (input, init) =>
+        new Headers(init?.headers).get('accept') === 'text/event-stream'
+          ? new Response('')
+          : app.request(input, init),
+    })
+    expect((await client.waitForTerminal(execution.id)).state).toBe('cancelled')
+  })
+
+  it('stops waiting on a terminal event even when the SSE connection remains open', async () => {
+    const cancel = vi.fn()
+    const execution = {
+      id: 'exec_terminal',
+      conversationId: 'conv_terminal',
+      providerId: 'mock',
+      state: 'succeeded',
+      input: 'done',
+      requiredCapabilities: [],
+      effectiveConfig: {},
+      createdAt: '2026-09-02T00:00:00.000Z',
+      updatedAt: '2026-09-02T00:00:00.000Z',
+    }
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(
+          new TextEncoder().encode(
+            `data: ${JSON.stringify({
+              id: 'exec_terminal:3',
+              executionId: execution.id,
+              sequence: 3,
+              type: 'run.completed',
+              time: execution.updatedAt,
+              data: { finalOutput: 'done' },
+            })}\n\n`,
+          ),
+        )
+      },
+      cancel,
+    })
+    const client = new HarnessRuntimeClient({
+      baseUrl: 'http://runtime.test',
+      fetch: async (_input, init) =>
+        new Headers(init?.headers).get('accept') === 'text/event-stream'
+          ? new Response(body)
+          : Response.json(execution),
+    })
+    expect((await client.waitForTerminal(execution.id)).state).toBe('succeeded')
+    expect(cancel).toHaveBeenCalledTimes(1)
+  })
+
+  it('preserves the abort signal during the final execution read', async () => {
+    const controller = new AbortController()
+    const fetch = vi.fn(async (_input, init) => {
+      if (new Headers(init?.headers).get('accept') === 'text/event-stream') return new Response('')
+      expect(init?.signal).toBe(controller.signal)
+      controller.abort()
+      init?.signal?.throwIfAborted()
+      throw new Error('Expected abort')
+    })
+    const client = new HarnessRuntimeClient({ baseUrl: 'http://runtime.test', fetch })
+    await expect(client.waitForTerminal('exec_aborted', controller.signal)).rejects.toMatchObject({
+      name: 'AbortError',
+    })
   })
 })
 

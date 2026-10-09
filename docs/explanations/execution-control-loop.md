@@ -4,7 +4,7 @@ Status: current
 
 Protocol version: `2026-09-02`
 
-![One portable execution control loop between caller, Runtime, Provider, and terminal outcome.](../../assets/execution-control-loop-en.png)
+![One portable execution control loop between caller, Runtime, Provider, and terminal outcome.](../../assets/execution-control-loop-en.svg)
 
 The caller controls an Execution through Runtime rather than invoking a native harness directly.
 Runtime checks required capabilities, starts Provider work, orders emitted observations, and exposes
@@ -30,6 +30,11 @@ Execution.
 SSE and JSON event reads use the same monotonic sequence cursor. Reconnecting clients may receive an
 event more than once and must deduplicate by `(executionId, sequence)`. The reference implementation
 replays only process-local history; durable restart recovery belongs to a future storage boundary.
+
+A closed SSE connection alone does not prove that an Execution ended. The TypeScript SDK's
+`waitForTerminal()` confirms the state with an execution read and throws
+`HarnessRuntimeStreamInterruptedError` if the stream ended while work is still active. Callers
+control reconnection using their last observed sequence. Stopping observation does not cancel work.
 
 See [Execution lifecycle](execution-lifecycle.md) for exact states and
 [Protocol](../../spec/protocol.md) for normative event semantics.

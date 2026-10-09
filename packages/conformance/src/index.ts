@@ -20,6 +20,7 @@ export interface ConformanceReport {
 export interface ConformanceOptions {
   input?: string
   timeoutMs?: number
+  cleanupTimeoutMs?: number
 }
 
 export async function runProviderConformance(
@@ -39,8 +40,10 @@ export async function runProviderConformance(
   )
   if (!manifest.success) return report(provider.manifest.id, checks)
 
+  const runtime = new InMemoryHarnessRuntime([provider])
+  const subscription = new AbortController()
+  let executionId: string | undefined
   try {
-    const runtime = new InMemoryHarnessRuntime([provider])
     const conversation = runtime.createConversation({ metadata: { suite: 'conformance' } })
     const execution = runtime.startExecution({
       conversationId: conversation.id,
@@ -48,8 +51,9 @@ export async function runProviderConformance(
       input: options.input ?? 'portable conformance probe',
       idempotencyKey: 'conformance-basic',
     })
+    executionId = execution.id
     const events = await withTimeout(
-      collect(runtime.subscribeEvents(execution.id)),
+      collect(runtime.subscribeEvents(execution.id, 0, subscription.signal)),
       options.timeoutMs ?? 10_000,
     )
     const finalExecution = runtime.getExecution(execution.id)
@@ -76,6 +80,26 @@ export async function runProviderConformance(
     add('terminal-event-last', terminalEvents[0]?.sequence === events.at(-1)?.sequence)
   } catch (error) {
     add('execution-probe', false, error instanceof Error ? error.message : String(error))
+  } finally {
+    subscription.abort()
+    if (executionId && !isTerminalExecutionState(runtime.getExecution(executionId).state)) {
+      try {
+        await withTimeout(
+          runtime.cancelExecution(executionId, 'Conformance probe stopped'),
+          options.cleanupTimeoutMs ?? 1_000,
+          'Conformance cleanup timed out',
+        )
+        const cleanupError = runtime.listEvents(executionId).events.at(-1)
+          ?.data.providerCleanupError
+        add(
+          'execution-cleanup',
+          cleanupError === undefined,
+          typeof cleanupError === 'string' ? cleanupError : undefined,
+        )
+      } catch (error) {
+        add('execution-cleanup', false, error instanceof Error ? error.message : String(error))
+      }
+    }
   }
 
   return report(provider.manifest.id, checks)
@@ -87,13 +111,17 @@ async function collect(events: AsyncIterable<RuntimeEvent>): Promise<RuntimeEven
   return result
 }
 
-async function withTimeout<T>(promise: Promise<T>, milliseconds: number): Promise<T> {
+async function withTimeout<T>(
+  promise: Promise<T>,
+  milliseconds: number,
+  message = 'Conformance probe timed out',
+): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined
   try {
     return await Promise.race([
       promise,
       new Promise<never>((_, reject) => {
-        timer = setTimeout(() => reject(new Error('Conformance probe timed out')), milliseconds)
+        timer = setTimeout(() => reject(new Error(message)), milliseconds)
       }),
     ])
   } finally {

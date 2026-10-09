@@ -11,7 +11,7 @@ image and normative text disagree, schemas and specification documents win.
 | `artifact-data-flow.png` | Chinese | T1 validated explanation | Artifact descriptor/content boundary |
 | `protocol-responsibility-en.png` | English | T1 validated explanation | Adjacent protocol responsibilities |
 | `protocol-responsibility-zh.png` | Chinese | T1 validated explanation | Adjacent protocol responsibilities |
-| `execution-control-loop-en.png` | English | T1 validated explanation | One complete execution feedback loop |
+| `execution-control-loop-en.svg` | English | T0 exact diagram | One complete execution feedback loop |
 | `execution-control-loop-zh.png` | Chinese | T1 validated explanation | One complete execution feedback loop |
 | `provider-boundary-en.png` | English | T1 validated explanation | Portable versus provider-native ownership |
 | `provider-boundary-zh.png` | Chinese | T1 validated explanation | Portable versus provider-native ownership |
