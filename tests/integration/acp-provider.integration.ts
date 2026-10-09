@@ -23,7 +23,7 @@ interface Trace {
   parseErrors: number
 }
 
-async function setup(mode: string, maxMessageBytes?: number) {
+async function setup(mode: string, maxMessageBytes?: number, maxPendingPermissions?: number) {
   const directory = await mkdtemp(join(tmpdir(), 'harness-acp-'))
   const tracePath = join(directory, 'trace.json')
   const deniedTarget = join(directory, 'protected.txt')
@@ -36,6 +36,7 @@ async function setup(mode: string, maxMessageBytes?: number) {
     runTimeoutMs: 3_000,
     shutdownGraceMs: 100,
     ...(maxMessageBytes === undefined ? {} : { maxMessageBytes }),
+    ...(maxPendingPermissions === undefined ? {} : { maxPendingPermissions }),
   })
   const runtime = new InMemoryHarnessRuntime([provider])
   const execution = runtime.startExecution({
@@ -73,6 +74,16 @@ function assertExited(trace: Trace) {
 }
 
 describe('ACP v1 adapter through the official SDK and owned subprocess', () => {
+  it('bounds pending permissions instead of allowing an unbounded approval queue', async () => {
+    const task = await setup('permission-parallel', undefined, 1)
+    try {
+      await drain(task.runtime, task.execution.id)
+      expect(task.runtime.getExecution(task.execution.id).state).toBe('failed')
+      assertExited(await task.trace())
+    } finally {
+      await task.cleanup()
+    }
+  })
   it('normalizes streamed text, disables client capabilities, and isolates environment', async () => {
     vi.stubEnv('HARNESS_PARENT_SENTINEL', 'synthetic-parent-value')
     const task = await setup('success')

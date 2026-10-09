@@ -30,3 +30,9 @@ The reference implementation does not write execution transcripts to disk or log
 
 `pnpm sanitize` uses ripgrep when available and a grep fallback otherwise. Scanner/tool errors fail
 the check. Matches list file names only; suspected credential values are never printed by the scanner.
+
+The ACP adapter uses a copied allowlist environment and direct argv launch. Client-side filesystem
+and terminal capabilities are disabled; this does not constrain an agent process's own OS access.
+Permission grants require explicit approval and remembered grants require an explicit option ID.
+Inbound protocol envelopes are validated before SDK routing to avoid raw diagnostic logging.
+Apply a deployment-owned sandbox and policies for native events before using real agents.

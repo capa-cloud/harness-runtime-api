@@ -9,4 +9,8 @@
 | [ADR 0002](decisions/0002-artifact-descriptors.md) | accepted | Portable descriptors with deployment-owned content storage |
 
 TypeScript schemas in `packages/protocol/src` are the executable source for payload validation. The
-OpenAPI document is the public HTTP projection and is checked for parseability in CI.
+OpenAPI document is the public HTTP projection. Its schemas are generated from the portable Zod
+schemas with `pnpm spec:generate`; routes and HTTP operation descriptions remain maintained in the
+OpenAPI file. CI checks generated component equality, independent JSON Schema boundary samples,
+and actual HTTP response compatibility. Timestamp constraints use generated patterns; format is
+an annotation under the document's JSON Schema dialect.

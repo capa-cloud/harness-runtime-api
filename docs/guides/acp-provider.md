@@ -17,6 +17,7 @@ const provider = new AcpProvider({
   runTimeoutMs: 300_000,
   shutdownGraceMs: 500,
   maxMessageBytes: 1_048_576,
+  maxPendingPermissions: 16,
 })
 ```
 

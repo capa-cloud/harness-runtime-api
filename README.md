@@ -49,6 +49,7 @@ Harness Runtime API introduces three explicit boundaries:
 | Artifact descriptors | Available | Validated creation events and list API; bytes stay outside Runtime |
 | Mock Provider | Available | Deterministic development and conformance provider |
 | DSH Provider | Experimental | SDK `0.1.0-rc.7`; extensions require an explicit deployment declaration |
+| ACP v1 Provider | Experimental | SDK `1.7.0`; permissions, text updates, and bounded subprocess cancellation |
 | Durable persistence and recovery | Not included | Current reference state is process-local |
 | Authentication and multi-tenancy | Not included | Must be supplied by a trusted deployment boundary |
 
@@ -165,6 +166,7 @@ idempotency, capability preflight, cursor replay, terminal-state semantics, and 
 | `@harness-runtime/core` | Provider SPI and in-memory reference runtime |
 | `@harness-runtime/provider-mock` | Deterministic provider for development and tests |
 | `@harness-runtime/provider-dsh` | Optional DeepSeek Harness subprocess adapter |
+| `@harness-runtime/provider-acp` | ACP v1 subprocess adapter with explicit human permission mapping |
 | `@harness-runtime/server` | HTTP/JSON and SSE reference binding |
 | `@harness-runtime/sdk-typescript` | Validating TypeScript HTTP/SSE client |
 | `@harness-runtime/conformance` | Reusable provider lifecycle checks |
@@ -184,6 +186,7 @@ Package names are workspace identifiers during the MVP and are not yet published
 - [Portable and provider-native boundary](docs/explanations/provider-boundary.md)
 - [Artifact descriptors](docs/guides/artifacts.md)
 - [DeepSeek Harness adapter](docs/guides/dsh-provider.md)
+- [ACP v1 adapter](docs/guides/acp-provider.md)
 - [Production deployment boundary](docs/guides/production-deployment.md)
 - [Architecture decisions](spec/README.md)
 - [Security policy](SECURITY.md)

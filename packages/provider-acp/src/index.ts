@@ -24,6 +24,7 @@ export interface AcpProviderOptions {
   runTimeoutMs?: number
   shutdownGraceMs?: number
   maxMessageBytes?: number
+  maxPendingPermissions?: number
 }
 
 export class AcpProvider implements HarnessProvider {
@@ -43,6 +44,7 @@ export class AcpProvider implements HarnessProvider {
       runTimeoutMs: positive(options.runTimeoutMs ?? 300_000),
       shutdownGraceMs: positive(options.shutdownGraceMs ?? 500),
       maxMessageBytes: positive(options.maxMessageBytes ?? 1_048_576),
+      maxPendingPermissions: positive(options.maxPendingPermissions ?? 16),
     }
     this.manifest = ProviderManifestSchema.parse({
       id: this.options.id,
@@ -149,6 +151,10 @@ export class AcpProvider implements HarnessProvider {
           }
         })
         .onRequest(acp.methods.client.session.requestPermission, ({ params }) => {
+          if (pendingPermissions.size >= this.options.maxPendingPermissions) {
+            rejectViolation()
+            return Promise.resolve(cancelledPermission())
+          }
           const permission = permissionTail.then(async () => {
             if (context.signal.aborted || !sessionId || params.sessionId !== sessionId) {
               return cancelledPermission()
