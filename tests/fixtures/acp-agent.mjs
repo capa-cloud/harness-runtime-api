@@ -1,4 +1,4 @@
-import { writeFileSync } from 'node:fs'
+import { renameSync, writeFileSync } from 'node:fs'
 import { isAbsolute } from 'node:path'
 import { Readable, Writable } from 'node:stream'
 import { createInterface } from 'node:readline'
@@ -18,8 +18,11 @@ const state = {
   parseErrors: 0,
 }
 const record = () => {
-  if (process.env.FIXTURE_TRACE_PATH)
-    writeFileSync(process.env.FIXTURE_TRACE_PATH, JSON.stringify(state))
+  const path = process.env.FIXTURE_TRACE_PATH
+  if (path) {
+    writeFileSync(`${path}.tmp`, JSON.stringify(state))
+    renameSync(`${path}.tmp`, path)
+  }
 }
 record()
 const inputObserver = createInterface({ input: process.stdin })

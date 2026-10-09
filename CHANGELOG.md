@@ -37,6 +37,8 @@ No unreleased changes.
   cleanup errors and timeouts included in the report.
 - Updated Hono to 4.13.7 to clear four production dependency advisories, including
   [GHSA-hxh3-vqpv-xpqv](https://github.com/honojs/hono/security/advisories/GHSA-hxh3-vqpv-xpqv).
+- Subprocess integration tests run serially with bounded startup allowances instead of assuming
+  idle-machine latency. Synthetic ACP traces use atomic replacement to avoid partial JSON reads.
 
 ### Documentation
 
