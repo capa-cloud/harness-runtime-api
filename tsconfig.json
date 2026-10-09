@@ -5,6 +5,7 @@
     { "path": "./packages/core" },
     { "path": "./packages/provider-mock" },
     { "path": "./packages/provider-dsh" },
+    { "path": "./packages/provider-acp" },
     { "path": "./packages/conformance" },
     { "path": "./packages/server" },
     { "path": "./packages/sdk-typescript" }

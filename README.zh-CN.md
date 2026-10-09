@@ -46,6 +46,7 @@ Harness Runtime API 建立三个明确边界：
 | Artifact 描述符 | 已提供 | 创建事件与列表 API；文件内容不进入 Runtime |
 | Mock Provider | 已提供 | 确定性的开发和一致性测试 Provider |
 | DSH Provider | 实验性 | SDK `0.1.0-rc.7`；原生扩展需由可信部署显式声明 |
+| ACP v1 Provider | 实验性 | SDK `1.7.0`；权限请求、文本更新和有界子进程取消 |
 | 持久化与重启恢复 | 未提供 | 当前参考状态只存在于进程内 |
 | 身份认证与多租户 | 未提供 | 必须由可信部署边界提供 |
 
@@ -156,6 +157,7 @@ Adapter 内部可以使用 ACP 或框架 SDK。Portable Runtime 额外定义幂�
 | `@harness-runtime/core` | Provider SPI 与内存参考 Runtime |
 | `@harness-runtime/provider-mock` | 用于开发和测试的确定性 Provider |
 | `@harness-runtime/provider-dsh` | 可选的 DeepSeek Harness 子进程适配器 |
+| `@harness-runtime/provider-acp` | ACP v1 子进程适配器，显式映射人工权限选择 |
 | `@harness-runtime/server` | HTTP/JSON 与 SSE 参考绑定 |
 | `@harness-runtime/sdk-typescript` | 带响应校验的 TypeScript HTTP/SSE Client |
 | `@harness-runtime/conformance` | 可复用的 Provider 生命周期一致性检查 |
@@ -175,6 +177,7 @@ MVP 阶段这些名称只作为 workspace 标识，尚未发布到包注册中�
 - [Portable 与 Provider Native 边界](docs/explanations/provider-boundary.md)
 - [Artifact 描述符](docs/guides/artifacts.md)
 - [DeepSeek Harness Adapter](docs/guides/dsh-provider.md)
+- [ACP v1 Adapter](docs/guides/acp-provider.md)
 - [生产部署边界](docs/guides/production-deployment.md)
 - [架构决策](spec/README.md)
 - [安全策略](SECURITY.md)

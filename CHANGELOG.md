@@ -6,6 +6,15 @@ changes.
 
 ## [Unreleased]
 
+### Added
+
+- ACP v1 subprocess Provider through the official SDK, with correlated human permissions,
+  one-time versus explicit remembered choices, serialized concurrent requests, and bounded process
+  teardown. Client filesystem/terminal access is disabled; native isolation remains deployment-owned.
+- Generated OpenAPI schema projection and independent contract/HTTP compatibility checks.
+- Real ACP transport tests using a synthetic Agent, including scope violations, malformed
+  messages, diagnostic redaction, process exit, and permission cancellation.
+
 ### Fixed
 
 - Provider emissions now reject reserved lifecycle events and malformed portable payloads before

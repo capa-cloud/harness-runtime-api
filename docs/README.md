@@ -23,6 +23,7 @@ Current protocol version: `2026-09-02`
 | Review state and invariants | [Runtime model](../spec/runtime-model.md) |
 | Implement Artifact handling | [Artifact descriptors](guides/artifacts.md) |
 | Configure the DSH adapter | [DeepSeek Harness Provider](guides/dsh-provider.md) |
+| Configure an ACP executable | [ACP v1 Provider](guides/acp-provider.md) |
 | Compare neighboring protocols | [Protocol stack](explanations/protocol-stack.md) |
 | Understand execution transitions | [Execution lifecycle](explanations/execution-lifecycle.md) |
 | Understand one complete run | [Execution control loop](explanations/execution-control-loop.md) |
