@@ -16,6 +16,8 @@ Current protocol version: `2026-09-02`
 | Need | Document |
 | --- | --- |
 | Run the reference server | [Quickstart](tutorials/quickstart.md) |
+| Run an application or implement a Provider | [Runnable examples](../examples/README.md) |
+| Review delivery acceptance and remaining work | [Delivery plan](development/delivery-plan.md) |
 | Integrate over HTTP/SSE | [OpenAPI 3.1](../spec/openapi.yaml) |
 | Understand lifecycle semantics | [Protocol](../spec/protocol.md) |
 | Review state and invariants | [Runtime model](../spec/runtime-model.md) |

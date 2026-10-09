@@ -58,8 +58,17 @@ export interface DshProviderOptions {
   modelProvider?: string
   model?: string
   maxTokens?: number
+  extensions?: DshExtensionCapability[]
   harnessFactory?: DshHarnessFactory
 }
+
+export type DshExtensionCapability =
+  | 'extension.mcp'
+  | 'extension.sandbox'
+  | 'extension.skills'
+  | 'extension.subagents'
+
+export const DSH_SDK_VERSION = '0.1.0-rc.7'
 
 interface ActiveDshClient {
   close(): Promise<void>
@@ -79,29 +88,48 @@ const manifest: ProviderManifest = {
     [StandardCapability.conversationContinuity]: 'unsupported',
     [StandardCapability.eventReplay]: 'emulated',
     [StandardCapability.eventStreaming]: 'native',
-    [StandardCapability.mcp]: 'native',
-    [StandardCapability.sandbox]: 'native',
-    [StandardCapability.skills]: 'native',
-    [StandardCapability.subagents]: 'native',
+    [StandardCapability.mcp]: 'unsupported',
+    [StandardCapability.sandbox]: 'unsupported',
+    [StandardCapability.skills]: 'unsupported',
+    [StandardCapability.subagents]: 'unsupported',
   },
   metadata: {
     upstream: 'https://github.com/deepseek-ai/deepseek-harness',
-    sdkCompatibility: '>=0.1.0-rc.7 <0.2.0',
+    sdkCompatibility: DSH_SDK_VERSION,
   },
 }
 
 export class DshProvider implements HarnessProvider {
-  readonly manifest = manifest
+  readonly manifest: ProviderManifest
   private readonly options: DshProviderOptions
   private readonly factory: DshHarnessFactory
   private readonly active = new Map<string, ActiveDshClient>()
 
   constructor(options: DshProviderOptions) {
-    this.options = options
+    this.manifest = structuredClone(manifest)
+    for (const extension of options.extensions ?? []) {
+      if (
+        ![
+          StandardCapability.mcp,
+          StandardCapability.sandbox,
+          StandardCapability.skills,
+          StandardCapability.subagents,
+        ].includes(extension)
+      ) {
+        throw new Error('Unknown DSH extension capability')
+      }
+      this.manifest.capabilities[extension] = 'native'
+    }
+    this.options = { ...options, launch: structuredClone(options.launch) }
     this.factory = options.harnessFactory ?? defaultFactory
   }
 
   async run(context: ProviderRunContext): Promise<{ finalOutput: string }> {
+    if (Object.keys(context.config).length > 0) {
+      throw new Error(
+        'DSH execution config must be empty; configure the trusted provider constructor',
+      )
+    }
     const client = await this.factory({
       launch: {
         ...this.options.launch,
@@ -161,6 +189,16 @@ function closeOnce(client: DshHarnessClient): ActiveDshClient {
 
 async function defaultFactory(options: DshHarnessOptions): Promise<DshHarnessClient> {
   const packageName = '@deepseek-ai/dsh-sdk-client'
+  const packageInfo: unknown = await import(`${packageName}/package.json`, {
+    with: { type: 'json' },
+  })
+  if (
+    !isRecord(packageInfo) ||
+    !isRecord(packageInfo.default) ||
+    packageInfo.default.version !== DSH_SDK_VERSION
+  ) {
+    throw new Error(`DSH adapter requires ${packageName}@${DSH_SDK_VERSION}`)
+  }
   const candidate: unknown = await import(packageName)
   if (!isRecord(candidate) || typeof candidate.DeepSeekHarness !== 'function') {
     throw new Error(`${packageName} does not export DeepSeekHarness`)

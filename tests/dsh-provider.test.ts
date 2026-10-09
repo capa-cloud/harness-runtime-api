@@ -7,6 +7,62 @@ import {
 } from '../packages/provider-dsh/src/index.js'
 
 describe('DSH provider adapter', () => {
+  it('declares only explicitly configured runtime extensions', () => {
+    const configured = new DshProvider({
+      launch: { command: 'dsh' },
+      extensions: ['extension.skills'],
+    })
+    const unconfigured = new DshProvider({ launch: { command: 'dsh' } })
+    expect(configured.manifest.capabilities['extension.skills']).toBe('native')
+    expect(unconfigured.manifest.capabilities['extension.skills']).toBe('unsupported')
+    expect(unconfigured.manifest.capabilities['extension.sandbox']).toBe('unsupported')
+  })
+
+  it('rejects per-execution launch config before creating a client', async () => {
+    const factory = vi.fn<DshHarnessFactory>()
+    const runtime = new InMemoryHarnessRuntime([
+      new DshProvider({ launch: { command: 'dsh' }, harnessFactory: factory }),
+    ])
+    const execution = runtime.startExecution({
+      conversationId: runtime.createConversation().id,
+      providerId: 'dsh',
+      input: 'synthetic request',
+      config: { command: 'untrusted-command' },
+    })
+    for await (const _event of runtime.subscribeEvents(execution.id)) {
+    }
+    expect(runtime.getExecution(execution.id).state).toBe('failed')
+    expect(factory).not.toHaveBeenCalled()
+  })
+
+  it('snapshots the trusted launch environment at construction', async () => {
+    const launch = { command: 'dsh', env: { FIXTURE_SETTING: 'original' } }
+    const factory = vi.fn<DshHarnessFactory>(async () => ({
+      run: async () => ({
+        sessionId: 'fixture',
+        finalResponse: 'done',
+        events: [],
+        notifications: [],
+      }),
+      close: async () => undefined,
+    }))
+    const provider = new DshProvider({ launch, harnessFactory: factory })
+    launch.env.FIXTURE_SETTING = 'changed'
+    const runtime = new InMemoryHarnessRuntime([provider])
+    const execution = runtime.startExecution({
+      conversationId: runtime.createConversation().id,
+      providerId: 'dsh',
+      input: 'synthetic request',
+    })
+    for await (const _event of runtime.subscribeEvents(execution.id)) {
+    }
+    expect(factory).toHaveBeenCalledWith(
+      expect.objectContaining({
+        launch: expect.objectContaining({ env: { FIXTURE_SETTING: 'original' } }),
+      }),
+    )
+  })
+
   it('maps text deltas and preserves raw provider notifications', async () => {
     const close = vi.fn(async () => undefined)
     const factory: DshHarnessFactory = async (): Promise<DshHarnessClient> => ({

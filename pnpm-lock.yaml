@@ -11,6 +11,9 @@ importers:
       '@biomejs/biome':
         specifier: 2.5.9
         version: 2.5.9
+      '@deepseek-ai/dsh-sdk-client':
+        specifier: 0.1.0-rc.7
+        version: 0.1.0-rc.7(af38b797c765b38881b3aea5de9d8d9a)
       '@types/node':
         specifier: 22.20.1
         version: 22.20.1
@@ -51,7 +54,7 @@ importers:
   packages/provider-dsh:
     dependencies:
       '@deepseek-ai/dsh-sdk-client':
-        specifier: '>=0.1.0-rc.7 <0.2.0'
+        specifier: 0.1.0-rc.7
         version: 0.1.0-rc.7(af38b797c765b38881b3aea5de9d8d9a)
       '@harness-runtime/core':
         specifier: workspace:*

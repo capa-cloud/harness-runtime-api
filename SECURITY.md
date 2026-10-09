@@ -18,3 +18,12 @@ Bind it to loopback unless a trusted gateway supplies those controls.
 Reference adapters do not inject credentials automatically. A deployment that passes an environment
 to a provider owns allowlisting and redaction, and must verify the subprocess behavior of the
 selected provider SDK version.
+
+DSH process launch and model options belong to the trusted constructor; execution requests cannot
+override them. Native runtime extensions are explicit deployment declarations and do not imply
+verified sandbox isolation. The runtime validates Provider emissions and prevents a Provider from
+reporting portable success while a human Action remains unresolved.
+
+Provider-native events and errors can contain prompt, tool, file, and process output. Deployments
+must restrict access to them and apply their own redaction policy before logging or exporting them.
+The reference implementation does not write execution transcripts to disk or log request bodies.

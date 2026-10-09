@@ -45,7 +45,7 @@ Harness Runtime API 建立三个明确边界：
 | 执行取消 | 已提供 | Portable 取消语义加 Provider 特定清理 |
 | Artifact 描述符 | 已提供 | 创建事件与列表 API；文件内容不进入 Runtime |
 | Mock Provider | 已提供 | 确定性的开发和一致性测试 Provider |
-| DSH Provider | 实验性 | 面向固定公开 SDK 兼容范围的可选子进程适配器 |
+| DSH Provider | 实验性 | SDK `0.1.0-rc.7`；原生扩展需由可信部署显式声明 |
 | 持久化与重启恢复 | 未提供 | 当前参考状态只存在于进程内 |
 | 身份认证与多租户 | 未提供 | 必须由可信部署边界提供 |
 
@@ -85,6 +85,9 @@ curl -N -H 'accept: text/event-stream' \
 ```
 
 审批、取消、事件回放和 Artifact 示例参见[完整快速入门](docs/tutorials/quickstart.md)。
+
+[可运行示例](examples/README.md)包含应用接入和嵌入式 Provider。`pnpm check` 还会使用实际 DSH SDK
+连接合成本地子进程，验证协议、取消和环境隔离，不需要模型凭据。
 
 ## Execution 控制回路
 

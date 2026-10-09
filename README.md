@@ -48,7 +48,7 @@ Harness Runtime API introduces three explicit boundaries:
 | Cancellation | Available | Portable cancellation with provider-specific cleanup |
 | Artifact descriptors | Available | Validated creation events and list API; bytes stay outside Runtime |
 | Mock Provider | Available | Deterministic development and conformance provider |
-| DSH Provider | Experimental | Optional subprocess adapter for the pinned public SDK range |
+| DSH Provider | Experimental | SDK `0.1.0-rc.7`; extensions require an explicit deployment declaration |
 | Durable persistence and recovery | Not included | Current reference state is process-local |
 | Authentication and multi-tenancy | Not included | Must be supplied by a trusted deployment boundary |
 
@@ -90,6 +90,9 @@ curl -N -H 'accept: text/event-stream' \
 
 See the [complete quickstart](docs/tutorials/quickstart.md) for approval, cancellation, replay, and
 Artifact examples.
+
+[Runnable examples](examples/README.md) cover an application and an embedded Provider. `pnpm check`
+also verifies the real DSH SDK against a synthetic subprocess without model credentials.
 
 ## Execution Control Loop
 

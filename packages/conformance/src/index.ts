@@ -1,5 +1,8 @@
-import { InMemoryHarnessRuntime, type HarnessProvider } from '@harness-runtime/core'
+import { InMemoryHarnessRuntime, RuntimeError, type HarnessProvider } from '@harness-runtime/core'
 import {
+  type ActionResponse,
+  type JsonObject,
+  type StandardEventType,
   ProviderManifestSchema,
   type RuntimeEvent,
   isTerminalExecutionState,
@@ -21,6 +24,12 @@ export interface ConformanceOptions {
   input?: string
   timeoutMs?: number
   cleanupTimeoutMs?: number
+  config?: JsonObject
+  requiredCapabilities?: string[]
+  actionResponse?: ActionResponse
+  cancelAfterEvent?: StandardEventType
+  expectedState?: 'succeeded' | 'failed' | 'cancelled'
+  expectedArtifacts?: number
 }
 
 export async function runProviderConformance(
@@ -45,20 +54,41 @@ export async function runProviderConformance(
   let executionId: string | undefined
   try {
     const conversation = runtime.createConversation({ metadata: { suite: 'conformance' } })
-    const execution = runtime.startExecution({
+    const request = {
       conversationId: conversation.id,
       providerId: provider.manifest.id,
       input: options.input ?? 'portable conformance probe',
       idempotencyKey: 'conformance-basic',
-    })
+      config: options.config ?? {},
+      requiredCapabilities: options.requiredCapabilities ?? [],
+    }
+    const execution = runtime.startExecution(request)
     executionId = execution.id
+    add('idempotency-reuse', runtime.startExecution(request).id === execution.id)
+    try {
+      runtime.startExecution({ ...request, input: `${request.input} (conflicting request)` })
+      add('idempotency-conflict', false)
+    } catch (error) {
+      add(
+        'idempotency-conflict',
+        error instanceof RuntimeError && error.code === 'IDEMPOTENCY_CONFLICT',
+      )
+    }
     const events = await withTimeout(
-      collect(runtime.subscribeEvents(execution.id, 0, subscription.signal)),
+      collect(runtime.subscribeEvents(execution.id, 0, subscription.signal), async (event) => {
+        if (event.type === 'action.required' && options.actionResponse !== undefined) {
+          runtime.respondAction(execution.id, String(event.data.id), options.actionResponse)
+        }
+        if (event.type === options.cancelAfterEvent) {
+          await runtime.cancelExecution(execution.id, 'Conformance cancellation probe')
+        }
+      }),
       options.timeoutMs ?? 10_000,
     )
     const finalExecution = runtime.getExecution(execution.id)
 
-    add('execution-succeeded', finalExecution.state === 'succeeded', finalExecution.state)
+    const expectedState = options.expectedState ?? 'succeeded'
+    add(`execution-${expectedState}`, finalExecution.state === expectedState, finalExecution.state)
     add('events-present', events.length >= 3, `${events.length} events`)
     add(
       'event-sequence-contiguous',
@@ -75,9 +105,54 @@ export async function runProviderConformance(
     add('terminal-state', isTerminalExecutionState(finalExecution.state), finalExecution.state)
     add(
       'final-output-event',
-      events.some((event) => event.type === 'output.text.done'),
+      events.some((event) => event.type === 'output.text.done') === (expectedState === 'succeeded'),
     )
     add('terminal-event-last', terminalEvents[0]?.sequence === events.at(-1)?.sequence)
+    if (options.actionResponse !== undefined) {
+      const actions = events.filter((event) => event.type === 'action.required')
+      add(
+        'action-response-correlation',
+        actions.length > 0 &&
+          actions.every(
+            (action) =>
+              events.filter(
+                (event) =>
+                  event.type === 'action.responded' && event.data.actionId === action.data.id,
+              ).length === 1,
+          ),
+      )
+    }
+    const terminalTypes = {
+      succeeded: 'run.completed',
+      failed: 'run.failed',
+      cancelled: 'run.cancelled',
+    }
+    add('terminal-event-matches-state', terminalEvents[0]?.type === terminalTypes[expectedState])
+    const cursor = Math.floor(events.length / 2)
+    add(
+      'cursor-replay',
+      JSON.stringify(runtime.listEvents(execution.id, cursor).events) ===
+        JSON.stringify(events.filter((event) => event.sequence > cursor)),
+    )
+    const artifacts = runtime.listArtifacts(execution.id).artifacts
+    const artifactEvents = events.filter((event) => event.type === 'artifact.created')
+    add(
+      'artifact-event-correlation',
+      artifactEvents.length === artifacts.length &&
+        artifacts.every(
+          (artifact) =>
+            events.filter(
+              (event) => event.type === 'artifact.created' && event.data.id === artifact.id,
+            ).length === 1,
+        ),
+    )
+    if (options.expectedArtifacts !== undefined) {
+      add(
+        'artifact-count',
+        artifacts.length === options.expectedArtifacts,
+        `${artifacts.length} artifacts`,
+      )
+    }
   } catch (error) {
     add('execution-probe', false, error instanceof Error ? error.message : String(error))
   } finally {
@@ -105,9 +180,15 @@ export async function runProviderConformance(
   return report(provider.manifest.id, checks)
 }
 
-async function collect(events: AsyncIterable<RuntimeEvent>): Promise<RuntimeEvent[]> {
+async function collect(
+  events: AsyncIterable<RuntimeEvent>,
+  onEvent: (event: RuntimeEvent) => Promise<void>,
+): Promise<RuntimeEvent[]> {
   const result: RuntimeEvent[] = []
-  for await (const event of events) result.push(event)
+  for await (const event of events) {
+    result.push(event)
+    await onEvent(event)
+  }
   return result
 }
 

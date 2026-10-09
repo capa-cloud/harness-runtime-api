@@ -7,6 +7,78 @@ import {
 import { MockProvider } from '../packages/provider-mock/src/index.js'
 
 describe('in-memory runtime', () => {
+  it.each(['reserved-event', 'non-json', 'invalid-delta', 'invalid-output', 'invalid-action'])(
+    'rejects %s without corrupting portable events',
+    async (mode) => {
+      const provider: HarnessProvider = {
+        manifest: new MockProvider().manifest,
+        async run(context) {
+          if (mode === 'reserved-event')
+            context.emit('run.completed' as Parameters<typeof context.emit>[0], {})
+          if (mode === 'non-json')
+            context.emit('provider.event', { invalid: Number.POSITIVE_INFINITY })
+          if (mode === 'invalid-delta') context.emit('output.text.delta', { text: 42 })
+          if (mode === 'invalid-output') return { finalOutput: 42 as unknown as string }
+          if (mode === 'invalid-action')
+            await context.requestAction({ kind: 'approval', title: '' })
+          return { finalOutput: 'unreachable' }
+        },
+      }
+      const runtime = new InMemoryHarnessRuntime([provider])
+      const execution = runtime.startExecution({
+        conversationId: runtime.createConversation().id,
+        providerId: 'mock',
+        input: 'synthetic boundary probe',
+      })
+      const events = await collect(runtime.subscribeEvents(execution.id))
+      expect(runtime.getExecution(execution.id).state).toBe('failed')
+      expect(
+        events.filter((event) =>
+          ['run.completed', 'run.failed', 'run.cancelled'].includes(event.type),
+        ),
+      ).toHaveLength(1)
+      expect(events.at(-1)?.type).toBe('run.failed')
+      expect(events.map((event) => event.sequence)).toEqual(events.map((_, index) => index + 1))
+    },
+  )
+
+  it.each(['return', 'throw'])(
+    'settles abandoned actions when a provider chooses to %s',
+    async (mode) => {
+      let rejectedAction: Promise<string> | undefined
+      const provider: HarnessProvider = {
+        manifest: new MockProvider().manifest,
+        async run(context) {
+          rejectedAction = context
+            .requestAction({ kind: 'approval', title: 'Synthetic approval' })
+            .then(
+              () => 'unexpected resolution',
+              (error: Error) => error.message,
+            )
+          if (mode === 'throw') throw new Error('synthetic provider failure')
+          return { finalOutput: 'premature success' }
+        },
+      }
+      const runtime = new InMemoryHarnessRuntime([provider])
+      const execution = runtime.startExecution({
+        conversationId: runtime.createConversation().id,
+        providerId: 'mock',
+        input: 'synthetic abandoned action',
+      })
+      const events = await collect(runtime.subscribeEvents(execution.id))
+      expect(runtime.getExecution(execution.id).state).toBe('failed')
+      expect(await rejectedAction).toBe(
+        mode === 'return'
+          ? 'Provider finished with an unresolved action'
+          : 'synthetic provider failure',
+      )
+      const action = events.find((event) => event.type === 'action.required')
+      expect(() =>
+        runtime.respondAction(execution.id, String(action?.data.id), { approved: true }),
+      ).toThrowError(expect.objectContaining({ code: 'ACTION_NOT_FOUND' }))
+    },
+  )
+
   it('runs an execution with contiguous, replayable events', async () => {
     const runtime = new InMemoryHarnessRuntime([new MockProvider()])
     const conversation = runtime.createConversation({ metadata: { tenant: 'example' } })

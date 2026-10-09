@@ -1,6 +1,8 @@
 import { randomUUID } from 'node:crypto'
 import {
   ActionResponseSchema,
+  ActionRequestSchema,
+  JsonObjectSchema,
   type Artifact,
   type ArtifactList,
   CreateConversationRequestSchema,
@@ -311,11 +313,19 @@ export class InMemoryHarnessRuntime {
         signal: record.controller.signal,
         emit: (type: ProviderEventType, data: JsonObject) => {
           if (isTerminalExecutionState(record.public.state)) return
+          if (!['output.text.delta', 'artifact.created', 'provider.event'].includes(type)) {
+            throw new Error('Provider emitted a reserved or unknown event type')
+          }
+          const parsedData = JsonObjectSchema.safeParse(data)
+          if (!parsedData.success) throw new Error('Provider emitted invalid JSON event data')
+          if (type === 'output.text.delta' && typeof parsedData.data.text !== 'string') {
+            throw new Error('Provider emitted an invalid text delta')
+          }
           if (type === 'artifact.created') {
-            this.appendArtifact(record, data)
+            this.appendArtifact(record, parsedData.data)
             return
           }
-          this.appendEvent(executionId, type, structuredClone(data))
+          this.appendEvent(executionId, type, parsedData.data)
         },
         requestAction: (input: ProviderActionInput) => this.requestAction(record, input),
       }
@@ -326,7 +336,13 @@ export class InMemoryHarnessRuntime {
         return
       }
       if (isTerminalExecutionState(record.public.state)) return
+      if (record.public.state !== 'running') {
+        throw new Error('Provider finished with an unresolved action')
+      }
 
+      if (!result || (result.finalOutput !== undefined && typeof result.finalOutput !== 'string')) {
+        throw new Error('Provider returned an invalid final output')
+      }
       const finalOutput = result.finalOutput ?? ''
       this.appendEvent(executionId, 'output.text.done', { text: finalOutput })
       this.setState(record, 'succeeded', { endedAt: now(), finalOutput })
@@ -338,6 +354,7 @@ export class InMemoryHarnessRuntime {
       }
       if (isTerminalExecutionState(record.public.state)) return
       const message = errorMessage(error)
+      this.rejectPendingActions(executionId, new Error(message))
       this.setState(record, 'failed', {
         endedAt: now(),
         error: { code: 'PROVIDER_ERROR', message },
@@ -366,7 +383,7 @@ export class InMemoryHarnessRuntime {
       )
     }
 
-    const request: ActionRequest = {
+    const parsedRequest = ActionRequestSchema.safeParse({
       id: makeId('action'),
       executionId: record.public.id,
       kind: input.kind,
@@ -374,13 +391,20 @@ export class InMemoryHarnessRuntime {
       payload: structuredClone(input.payload ?? {}),
       createdAt: now(),
       ...(input.description === undefined ? {} : { description: input.description }),
+    })
+    if (!parsedRequest.success) {
+      return Promise.reject(new Error('Provider requested an invalid action'))
     }
+    const request = parsedRequest.data
     this.setState(record, input.kind === 'approval' ? 'awaiting_approval' : 'awaiting_input')
     this.appendEvent(record.public.id, 'action.required', actionRequestData(request))
 
-    return new Promise<ActionResponse>((resolve, reject) => {
+    const response = new Promise<ActionResponse>((resolve, reject) => {
       this.pendingActions.set(request.id, { request, resolve, reject, settled: false })
     })
+    // A provider may abandon its action on failure; awaiting callers still receive the rejection.
+    void response.catch(() => undefined)
+    return response
   }
 
   private assertCapabilities(manifest: ProviderManifest, required: string[]): void {

@@ -8,6 +8,14 @@ changes.
 
 ### Fixed
 
+- Provider emissions now reject reserved lifecycle events and malformed portable payloads before
+  appending them. Providers cannot report success while an Action remains unresolved.
+- Capability conformance now supports explicit approval/input/denial/cancellation/Artifact scenarios
+  and verifies observed Action correlation, idempotency conflicts, and cursor replay.
+- Public-content scanning detects common credential prefixes and has synthetic regression fixtures.
+- DSH compatibility is pinned to the verified public SDK `0.1.0-rc.7`. Launch configuration is
+  snapshotted, per-execution overrides are rejected, and native runtime extensions default to
+  unsupported unless explicitly declared by a trusted deployment.
 - SDK terminal waits now confirm execution state after SSE EOF and report interrupted active runs
   with `HarnessRuntimeStreamInterruptedError`.
 - SDK terminal events end observation without waiting for the connection to close; abort signals
@@ -19,6 +27,8 @@ changes.
 
 ### Documentation
 
+- Added runnable application/Provider examples and real SDK/subprocess integration checks using
+  synthetic data only. The delivery plan records remaining acceptance requirements.
 - Replaced the English control-loop raster with an exact SVG after correcting Action response
   direction and retiring inaccurate image validation records.
 - Added bilingual execution-control, provider-boundary, and production-boundary diagrams.

@@ -2,7 +2,10 @@ import { readFile } from 'node:fs/promises'
 import { describe, expect, it, vi } from 'vitest'
 import type { HarnessProvider, ProviderRunContext } from '../packages/core/src/index.js'
 import { parse } from 'yaml'
-import { runProviderConformance } from '../packages/conformance/src/index.js'
+import {
+  runProviderConformance,
+  type ConformanceOptions,
+} from '../packages/conformance/src/index.js'
 import { PROTOCOL_VERSION } from '../packages/protocol/src/index.js'
 import { MockProvider } from '../packages/provider-mock/src/index.js'
 
@@ -11,6 +14,57 @@ describe('conformance and published specification', () => {
     const report = await runProviderConformance(new MockProvider())
     expect(report.passed).toBe(true)
     expect(report.checks.every((check) => check.passed)).toBe(true)
+  })
+
+  it('fails an approval scenario when the provider never requests an action', async () => {
+    const provider: HarnessProvider = {
+      manifest: new MockProvider().manifest,
+      run: async () => ({ finalOutput: 'synthetic no-action result' }),
+    }
+    const report = await runProviderConformance(provider, {
+      requiredCapabilities: ['action.approval'],
+      actionResponse: { approved: true },
+    })
+    expect(report.passed).toBe(false)
+    expect(report.checks).toContainEqual({ name: 'action-response-correlation', passed: false })
+  })
+
+  it.each<ConformanceOptions & { name: string }>([
+    {
+      name: 'approval',
+      config: { requireApproval: true },
+      requiredCapabilities: ['action.approval'],
+      actionResponse: { approved: true },
+    },
+    {
+      name: 'input',
+      config: { requestInput: true },
+      requiredCapabilities: ['action.input'],
+      actionResponse: { value: 'synthetic response' },
+    },
+    {
+      name: 'artifacts',
+      config: { artifactName: 'synthetic.txt' },
+      requiredCapabilities: ['artifact.list'],
+      expectedArtifacts: 1,
+    },
+    {
+      name: 'denial',
+      config: { requireApproval: true },
+      requiredCapabilities: ['action.approval'],
+      actionResponse: { approved: false },
+      expectedState: 'failed' as const,
+    },
+    {
+      name: 'cancellation',
+      config: { delayMs: 100 },
+      requiredCapabilities: ['execution.cancel'],
+      cancelAfterEvent: 'run.started' as const,
+      expectedState: 'cancelled' as const,
+    },
+  ])('passes the $name capability scenario', async ({ name: _name, ...options }) => {
+    const report = await runProviderConformance(new MockProvider(), options)
+    expect(report.passed).toBe(true)
   })
 
   it('aborts the subscription and cancels provider work after a probe timeout', async () => {

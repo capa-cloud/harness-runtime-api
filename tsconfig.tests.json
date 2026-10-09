@@ -9,5 +9,5 @@
       "@harness-runtime/protocol": ["./packages/protocol/src/index.ts"]
     }
   },
-  "include": ["tests/**/*.ts", "vitest.config.ts"]
+  "include": ["tests/**/*.ts", "vitest.config.ts", "vitest.integration.config.ts"]
 }
