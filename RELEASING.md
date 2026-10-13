@@ -13,12 +13,17 @@ version.
 pnpm install --frozen-lockfile
 pnpm check
 pnpm sanitize
-pnpm audit --prod --audit-level high
+pnpm security:audit
 ```
 
 4. Start the built reference server and verify runtime description, execution, SSE replay, approval,
    cancellation, capability rejection, and Artifact listing.
 5. Confirm generated images and release notes contain no private identifiers or credentials.
+
+Audit the full dependency graph, not only production dependencies: build and test tooling can
+also carry advisories. `pnpm check` includes this audit and requires registry access. If a security
+fix changes the lockfile, regenerate and verify the source bundle at the new reviewed commit;
+old candidate checksums or tag approvals do not apply to the replacement candidate.
 
 ## Versioning
 

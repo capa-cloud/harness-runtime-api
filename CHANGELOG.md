@@ -6,7 +6,14 @@ changes.
 
 ## [Unreleased]
 
-No unreleased changes.
+### Security
+
+- Pin transitive `source-map-js` to `1.2.2` to address
+  [GHSA-68fv-2mgg-jv7q](https://github.com/advisories/GHSA-68fv-2mgg-jv7q) in development tooling.
+- Include development and production dependency auditing in `pnpm check`, with a moderate severity
+  threshold and fail-closed registry handling. Add lockfile and CI-gate regression tests.
+- Clarify authentication, ownership, redaction, quotas, native isolation, and generated-media
+  metadata checks required at a deployment/publication boundary. No portable protocol changes.
 
 ## [0.2.0] - 2026-10-09
 

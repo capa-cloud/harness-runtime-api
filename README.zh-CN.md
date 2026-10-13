@@ -68,6 +68,10 @@ pnpm check
 pnpm dev
 ```
 
+`pnpm check` 包含开发与生产依赖的完整安全审计，需要访问包注册服务；中危及以上漏洞、
+网络或审计服务失败都会阻断检查。可单独运行 `pnpm security:audit`。真实数据处理与部署边界见
+[安全策略](SECURITY.md)。
+
 参考服务默认监听 `127.0.0.1:4310`，并注册 Mock Provider。
 
 ```bash
