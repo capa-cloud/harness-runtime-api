@@ -19,6 +19,7 @@ provider adapters, SDKs, and conformance checks.
 - Build: `pnpm build`
 - Tests: `pnpm test`
 - Public-content scan: `pnpm sanitize`
+- All-dependency audit: `pnpm security:audit` (also required by `pnpm check`)
 
 ## Contract Rules
 

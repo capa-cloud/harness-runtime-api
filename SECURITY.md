@@ -36,3 +36,27 @@ and terminal capabilities are disabled; this does not constrain an agent process
 Permission grants require explicit approval and remembered grants require an explicit option ID.
 Inbound protocol envelopes are validated before SDK routing to avoid raw diagnostic logging.
 Apply a deployment-owned sandbox and policies for native events before using real agents.
+
+## Dependency Gate
+
+`pnpm security:audit` checks the complete dependency graph, including development tooling, and
+fails on moderate-or-higher advisories. `pnpm check` invokes it, so existing CI covers both runtime
+and build/test dependencies. Registry/network failures also fail the command; a production-only
+audit is not an equivalent substitute.
+
+The workspace pins the patched `source-map-js@1.2.2` through a targeted override for
+[GHSA-68fv-2mgg-jv7q](https://github.com/advisories/GHSA-68fv-2mgg-jv7q).
+Keep the override, frozen lockfile, and regression checks aligned when changing this policy.
+
+## Data Handling Checklist
+
+- Authenticate callers and authorize each Conversation, Execution, Event, Action, and Artifact
+  operation before exposing the reference API to untrusted users. Resource IDs are not credentials.
+- Inputs, outputs, native events, Provider errors, and Artifact URIs can contain sensitive data.
+  Restrict access and apply explicit redaction before external logging or export.
+- Limit request size, execution concurrency, event volume, and retention at the deployment boundary.
+  In-memory reference collections are not a bounded retention or deletion policy.
+- Isolate the agent's OS privileges, workspace, and network access. Disabling ACP client methods
+  and using direct argv launch do not sandbox the native process.
+- Review both visible image content and metadata, including C2PA/JUMBF containers, before publishing
+  generated media. Content credentials are provenance metadata, not proof of privacy or safe content.

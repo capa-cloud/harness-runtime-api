@@ -10,6 +10,11 @@ pnpm check
 Use Node.js 22 or later. Keep changes scoped to one protocol or provider concern and add tests for
 observable behavior.
 
+`pnpm check` includes `pnpm security:audit`, which covers development and production dependencies
+at the moderate severity threshold. Registry access is required; advisory-service/network errors
+fail the gate rather than silently skipping it. `pnpm test` remains the credential-free local
+test command, but does not substitute for the complete check.
+
 ## Contract Changes
 
 Public protocol changes must include:

@@ -41,3 +41,19 @@ outside the core package.
 Authentication, persistence, scheduling, and observability may be implemented by different products.
 They remain deployment concerns so the portable protocol does not depend on one cloud or
 proprietary platform.
+
+## Security Acceptance
+
+Treat reference-runtime tests as protocol evidence, not production security approval. Before using
+real sensitive data or multiple users, verify these controls with synthetic data:
+
+1. An unauthenticated caller cannot read or mutate any Execution or subscribe to its events.
+2. One authenticated actor cannot access another actor's Conversation, Execution, pending Action,
+   event stream, or Artifact descriptor. Knowing an ID must not bypass ownership checks.
+3. Provider errors and native event fields pass the deployment's redaction policy before log/export.
+4. Request size, concurrency, retained state, and event volume have enforceable quotas and cleanup.
+5. Native processes cannot access another workspace or unapproved host files/network destinations.
+
+The reference implementation intentionally does not supply these controls. In particular, a
+loopback listener is not tenant authentication, an environment allowlist is not an OS sandbox,
+and disabling ACP client file/terminal methods does not constrain the native process's own access.

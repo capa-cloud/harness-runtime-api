@@ -6,6 +6,11 @@ The accepted ADRs define a portable control/event contract with explicit provide
 storage, tenant administration, and production scheduling remain deployment responsibilities; this
 delivery does not claim those features exist in the reference server.
 
+Security maintenance as of 2026-10-13 is tracked separately in the
+[security checkpoint](security-maintenance.md). Its full dependency gate supersedes earlier
+production-only audit evidence. The old `4902b3f` archive is not the repaired release candidate;
+its immutable-tag publication step remains separate from maintenance submission.
+
 ## Acceptance Checklist
 
 - [x] DSH compatibility is pinned to an actually tested public SDK, with subprocess integration

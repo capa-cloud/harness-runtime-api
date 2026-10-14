@@ -74,6 +74,10 @@ pnpm dev
 
 The reference server listens on `127.0.0.1:4310` and registers the Mock Provider.
 
+`pnpm check` includes a registry-backed audit of all dependencies, including development tooling;
+moderate-or-higher advisories and registry failures fail the gate. Run `pnpm security:audit` to
+repeat that check independently. See the [security policy](SECURITY.md) for deployment data boundaries.
+
 ```bash
 conversation_id=$(curl -s -X POST http://127.0.0.1:4310/v1/conversations \
   -H 'content-type: application/json' \
