@@ -25,8 +25,20 @@ contains that version and no affected predecessor. Other dependency versions are
 
 The repaired tree passed `pnpm check`: 64 unit/contract tests and 35 credential-free integration
 tests, format, lint, type checking, workspace builds, and the all-dependency audit. A separate
-`pnpm security:audit` reported no known vulnerabilities. Remote CI and sanitization evidence must
-be bound to the final submitted revision before claiming submission complete.
+`pnpm security:audit` reported no known vulnerabilities.
+
+## Submission Evidence
+
+Read-back as of 2026-10-14: the repaired code revision `557ed40` passed
+[Node 22/24 CI](https://github.com/capa-cloud/harness-runtime-api/actions/runs/38344351822).
+The maintenance change is tracked in [PR 13](https://github.com/capa-cloud/harness-runtime-api/pull/13).
+The all-dependency audit was repeated on 2026-10-14 with no known vulnerabilities reported.
+
+The source/history privacy scan covered 139 tracked files, 32 reachable commits, and 309 unique
+historical file objects at that revision, with no credential or private-fingerprint findings.
+Local synthetic advisory-service failure returned a nonzero exit, confirming the audit gate does
+not silently pass when the registry is unavailable. These are dated, revision-bound observations;
+repeat audits for later changes rather than treating the counts as a permanent guarantee.
 
 ## Data And Publication Boundaries
 
