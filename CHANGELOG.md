@@ -14,6 +14,8 @@ changes.
   threshold and fail-closed registry handling. Add lockfile and CI-gate regression tests.
 - Clarify authentication, ownership, redaction, quotas, native isolation, and generated-media
   metadata checks required at a deployment/publication boundary. No portable protocol changes.
+- Require native readiness in cancellation probes and give those non-timeout tests an independent
+  bounded execution allowance, without changing production timeouts or cancellation assertions.
 
 ## [0.2.0] - 2026-10-09
 

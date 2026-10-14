@@ -23,7 +23,12 @@ interface Trace {
   parseErrors: number
 }
 
-async function setup(mode: string, maxMessageBytes?: number, maxPendingPermissions?: number) {
+async function setup(
+  mode: string,
+  maxMessageBytes?: number,
+  maxPendingPermissions?: number,
+  runTimeoutMs = 10_000,
+) {
   const directory = await mkdtemp(join(tmpdir(), 'harness-acp-'))
   const tracePath = join(directory, 'trace.json')
   const deniedTarget = join(directory, 'protected.txt')
@@ -33,7 +38,7 @@ async function setup(mode: string, maxMessageBytes?: number, maxPendingPermissio
     args: [fixture],
     env: { FIXTURE_MODE: mode, FIXTURE_TRACE_PATH: tracePath, FIXTURE_DENIED_TARGET: deniedTarget },
     initializationTimeoutMs: 10_000,
-    runTimeoutMs: 10_000,
+    runTimeoutMs,
     shutdownGraceMs: 1_000,
     ...(maxMessageBytes === undefined ? {} : { maxMessageBytes }),
     ...(maxPendingPermissions === undefined ? {} : { maxPendingPermissions }),
@@ -191,12 +196,17 @@ describe('ACP v1 adapter through the official SDK and owned subprocess', () => {
   it.each(['hang', 'stubborn', 'permission'])(
     'cancels %s, reaps the process, and emits one terminal event',
     async (mode) => {
-      const task = await setup(mode)
+      // Observe native readiness before cancellation; this is not an execution-timeout test.
+      const task = await setup(mode, undefined, undefined, 25_000)
       try {
+        let ready = false
         for await (const event of task.runtime.subscribeEvents(task.execution.id)) {
-          if (event.type === (mode === 'permission' ? 'action.required' : 'output.text.delta'))
+          if (event.type === (mode === 'permission' ? 'action.required' : 'output.text.delta')) {
+            ready = true
             break
+          }
         }
+        expect(ready, JSON.stringify(task.runtime.getExecution(task.execution.id).error)).toBe(true)
         await task.runtime.cancelExecution(task.execution.id)
         const events = task.runtime.listEvents(task.execution.id).events
         expect(task.runtime.getExecution(task.execution.id).state).toBe('cancelled')
